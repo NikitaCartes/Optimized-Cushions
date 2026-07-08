@@ -3,8 +3,10 @@
     "package": "xyz.nikitacartes.optimisedcushions.mixin",
     "compatibilityLevel": "JAVA_25",
     "client": [
+        "CushionMixin",
         "CushionRendererMixin",
         "CushionRenderStateMixin",
+        "EntityMixin",
         "LevelExtractorMixin",
         "SectionCompilerMixin"
     ],

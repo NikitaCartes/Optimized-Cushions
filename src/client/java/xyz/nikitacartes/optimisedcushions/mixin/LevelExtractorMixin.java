@@ -12,14 +12,9 @@ import xyz.nikitacartes.optimisedcushions.CushionTracker;
 
 @Mixin(LevelExtractor.class)
 public class LevelExtractorMixin {
-    /**
-     * Baked cushions are chunk geometry; drop them from the per-frame entity pipeline
-     * (frustum test, render state extraction, submit) before any of it runs. Cushions
-     * with a custom name keep the vanilla path so the name tag still renders — for
-     * those only the model submit is skipped (see {@link CushionRendererMixin}).
-     * Wraps the call inside extractVisibleEntities rather than isEntityVisible itself
-     * so the F3+B hitbox debug renderer still sees baked cushions.
-     */
+    // Named cushions keep the vanilla path so the name tag still renders (their model
+    // submit is skipped in CushionRendererMixin). Wraps the call rather than
+    // isEntityVisible itself so F3+B hitboxes still see baked cushions.
     @WrapOperation(
         method = "extractVisibleEntities(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/DeltaTracker;Lnet/minecraft/client/renderer/state/level/LevelRenderState;)V",
         at = @At(
@@ -36,7 +31,7 @@ public class LevelExtractorMixin {
         final double camZ,
         final Operation<Boolean> original
     ) {
-        if (entity instanceof Cushion cushion && !cushion.hasCustomName() && CushionTracker.isBaked(cushion)) {
+        if (entity instanceof Cushion cushion && CushionTracker.isBaked(cushion) && !cushion.hasCustomName()) {
             return false;
         }
         return original.call(extractor, entity, frustum, camX, camY, camZ);

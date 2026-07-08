@@ -1,78 +1,78 @@
 package xyz.nikitacartes.optimisedcushions;
 
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.entity.decoration.Cushion;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.Level;
 
 /**
  * Client-side index of cushion entities, grouped by the chunk section that owns them
- * (the section of {@code blockPosition()}). Mutated only on the client main thread
- * (entity load/unload events + end-of-tick scan); read from section meshing worker
- * threads via the concurrent {@link #BY_SECTION} map holding immutable snapshots.
+ * (the section of {@code blockPosition()}). Event-driven: load/unload events and the
+ * setPos/onSyncedDataUpdated mixin hooks feed a dirty queue drained at end of tick.
+ * Mutated only on the client main thread; read from section meshing worker threads
+ * via the concurrent {@link #BY_SECTION} map holding immutable snapshots.
  */
 public final class CushionTracker {
     /** Immutable per-cushion state used for baking. */
     public record Snapshot(double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
     }
 
-    private static final Map<Integer, Cushion> TRACKED = new HashMap<>();
     private static final Map<Integer, Snapshot> SNAPSHOTS = new HashMap<>();
+    private static final Set<Cushion> DIRTY = new HashSet<>();
     private static final ConcurrentHashMap<Long, ConcurrentHashMap<Integer, Snapshot>> BY_SECTION = new ConcurrentHashMap<>();
-    private static ClientLevel lastLevel;
+    private static Level lastLevel;
 
     private CushionTracker() {
     }
 
     public static void onLoad(final Cushion cushion) {
-        TRACKED.put(cushion.getId(), cushion);
+        // Flushing only in tick() would wipe spawn-chunk cushions: on a level change
+        // their ENTITY_LOAD fires before the first end-of-tick.
+        if (cushion.level() != lastLevel) {
+            flush(cushion.level());
+        }
         update(cushion);
     }
 
     public static void onUnload(final Cushion cushion) {
-        TRACKED.remove(cushion.getId());
-        drop(cushion.getId());
+        DIRTY.remove(cushion);
+        drop(cushion);
+    }
+
+    public static void markChanged(final Cushion cushion) {
+        DIRTY.add(cushion);
     }
 
     public static void tick(final Minecraft minecraft) {
         if (minecraft.level != lastLevel) {
-            // Keep cushions that already loaded into the new level: ENTITY_LOAD fires for
-            // spawn-chunk entities before the first end-of-tick after a level change, and
-            // wiping those here would leave them rendering as vanilla entities forever.
-            // Their snapshots are rebuilt by the update() loop below.
-            TRACKED.values().removeIf(cushion -> cushion.level() != minecraft.level);
-            SNAPSHOTS.clear();
-            BY_SECTION.clear();
-            lastLevel = minecraft.level;
+            flush(minecraft.level);
         }
 
-        if (TRACKED.isEmpty()) {
+        if (DIRTY.isEmpty()) {
             return;
         }
 
-        Iterator<Cushion> iterator = TRACKED.values().iterator();
-        while (iterator.hasNext()) {
-            Cushion cushion = iterator.next();
+        for (Cushion cushion : DIRTY) {
             if (cushion.isRemoved() || cushion.level() != minecraft.level) {
-                iterator.remove();
-                drop(cushion.getId());
+                drop(cushion);
             } else {
                 update(cushion);
             }
         }
+        DIRTY.clear();
     }
 
     /** Whether the given cushion is currently rendered as chunk geometry instead of an entity model. */
     public static boolean isBaked(final Cushion cushion) {
-        Snapshot snapshot = SNAPSHOTS.get(cushion.getId());
-        return snapshot != null && snapshot.bakeable();
+        return ((CushionExt)cushion).optimisedcushions$isBaked();
     }
 
     /** Read from section meshing threads. Returns null when the section has no baked cushions. */
@@ -80,14 +80,20 @@ public final class CushionTracker {
         return BY_SECTION.get(sectionKey);
     }
 
+    private static void flush(final Level level) {
+        SNAPSHOTS.clear();
+        BY_SECTION.clear();
+        DIRTY.clear();
+        lastLevel = level;
+    }
+
     private static void update(final Cushion cushion) {
-        Snapshot prev = SNAPSHOTS.get(cushion.getId());
-        if (prev != null && unchanged(prev, cushion)) {
+        Snapshot next = snapshot(cushion);
+        Snapshot prev = SNAPSHOTS.put(cushion.getId(), next);
+        ((CushionExt)cushion).optimisedcushions$setBaked(next.bakeable());
+        if (next.equals(prev)) {
             return;
         }
-
-        Snapshot next = snapshot(cushion);
-        SNAPSHOTS.put(cushion.getId(), next);
 
         if (prev != null && prev.bakeable()) {
             removeFromSection(prev.sectionKey(), cushion.getId());
@@ -102,31 +108,17 @@ public final class CushionTracker {
         }
     }
 
-    private static void drop(final int id) {
-        Snapshot prev = SNAPSHOTS.remove(id);
+    private static void drop(final Cushion cushion) {
+        ((CushionExt)cushion).optimisedcushions$setBaked(false);
+        Snapshot prev = SNAPSHOTS.remove(cushion.getId());
         if (prev != null && prev.bakeable()) {
-            removeFromSection(prev.sectionKey(), id);
+            removeFromSection(prev.sectionKey(), cushion.getId());
             markDirty(prev.sectionKey());
         }
     }
 
-    /**
-     * Allocation-free change check run for every tracked cushion every tick; the derived
-     * snapshot fields (lightPos, sectionKey) only depend on the position compared here.
-     */
-    private static boolean unchanged(final Snapshot prev, final Cushion cushion) {
-        return prev.x() == cushion.getX()
-            && prev.y() == cushion.getY()
-            && prev.z() == cushion.getZ()
-            && prev.color() == cushion.getColor()
-            && prev.dir() == Direction.fromYRot(cushion.getYRot())
-            && prev.bakeable() == isBakeable(cushion);
-    }
-
-    /**
-     * Deliberately {@code isCurrentlyGlowing} instead of {@code Minecraft.shouldEntityAppearGlowing}:
-     * the extra branch there (spectator outlines) only ever applies to player entities.
-     */
+    // isCurrentlyGlowing, not Minecraft.shouldEntityAppearGlowing: its extra branch
+    // (spectator outlines) only applies to players.
     private static boolean isBakeable(final Cushion cushion) {
         return !cushion.isCurrentlyGlowing() && !cushion.displayFireAnimation() && !cushion.isInvisible();
     }
