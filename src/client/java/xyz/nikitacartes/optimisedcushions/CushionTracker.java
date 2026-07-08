@@ -43,7 +43,13 @@ public final class CushionTracker {
 
     public static void tick(final Minecraft minecraft) {
         if (minecraft.level != lastLevel) {
-            clearAll();
+            // Keep cushions that already loaded into the new level: ENTITY_LOAD fires for
+            // spawn-chunk entities before the first end-of-tick after a level change, and
+            // wiping those here would leave them rendering as vanilla entities forever.
+            // Their snapshots are rebuilt by the update() loop below.
+            TRACKED.values().removeIf(cushion -> cushion.level() != minecraft.level);
+            SNAPSHOTS.clear();
+            BY_SECTION.clear();
             lastLevel = minecraft.level;
         }
 
@@ -75,11 +81,13 @@ public final class CushionTracker {
     }
 
     private static void update(final Cushion cushion) {
-        Snapshot next = snapshot(cushion);
-        Snapshot prev = SNAPSHOTS.put(cushion.getId(), next);
-        if (next.equals(prev)) {
+        Snapshot prev = SNAPSHOTS.get(cushion.getId());
+        if (prev != null && unchanged(prev, cushion)) {
             return;
         }
+
+        Snapshot next = snapshot(cushion);
+        SNAPSHOTS.put(cushion.getId(), next);
 
         if (prev != null && prev.bakeable()) {
             removeFromSection(prev.sectionKey(), cushion.getId());
@@ -102,15 +110,28 @@ public final class CushionTracker {
         }
     }
 
-    private static void clearAll() {
-        TRACKED.clear();
-        SNAPSHOTS.clear();
-        BY_SECTION.clear();
+    /**
+     * Allocation-free change check run for every tracked cushion every tick; the derived
+     * snapshot fields (lightPos, sectionKey) only depend on the position compared here.
+     */
+    private static boolean unchanged(final Snapshot prev, final Cushion cushion) {
+        return prev.x() == cushion.getX()
+            && prev.y() == cushion.getY()
+            && prev.z() == cushion.getZ()
+            && prev.color() == cushion.getColor()
+            && prev.dir() == Direction.fromYRot(cushion.getYRot())
+            && prev.bakeable() == isBakeable(cushion);
+    }
+
+    /**
+     * Deliberately {@code isCurrentlyGlowing} instead of {@code Minecraft.shouldEntityAppearGlowing}:
+     * the extra branch there (spectator outlines) only ever applies to player entities.
+     */
+    private static boolean isBakeable(final Cushion cushion) {
+        return !cushion.isCurrentlyGlowing() && !cushion.displayFireAnimation() && !cushion.isInvisible();
     }
 
     private static Snapshot snapshot(final Cushion cushion) {
-        Minecraft minecraft = Minecraft.getInstance();
-        boolean bakeable = !minecraft.shouldEntityAppearGlowing(cushion) && !cushion.displayFireAnimation() && !cushion.isInvisible();
         BlockPos lightPos = BlockPos.containing(cushion.getLightProbePosition(1.0F));
         return new Snapshot(
             cushion.getX(),
@@ -120,7 +141,7 @@ public final class CushionTracker {
             cushion.getColor(),
             lightPos,
             SectionPos.asLong(cushion.blockPosition()),
-            bakeable
+            isBakeable(cushion)
         );
     }
 

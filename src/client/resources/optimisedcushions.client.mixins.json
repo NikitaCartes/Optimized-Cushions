@@ -5,6 +5,7 @@
     "client": [
         "CushionRendererMixin",
         "CushionRenderStateMixin",
+        "LevelExtractorMixin",
         "SectionCompilerMixin"
     ],
     "injectors": {
