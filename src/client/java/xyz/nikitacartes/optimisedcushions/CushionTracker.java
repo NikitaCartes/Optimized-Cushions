@@ -1,7 +1,8 @@
 package xyz.nikitacartes.optimisedcushions;
 
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +27,7 @@ public final class CushionTracker {
     }
 
     private static final Map<Integer, Snapshot> SNAPSHOTS = new HashMap<>();
-    private static final Set<Cushion> DIRTY = new HashSet<>();
+    private static final Set<Cushion> DIRTY = Collections.newSetFromMap(new IdentityHashMap<>());
     private static final ConcurrentHashMap<Long, ConcurrentHashMap<Integer, Snapshot>> BY_SECTION = new ConcurrentHashMap<>();
     private static Level lastLevel;
 
