@@ -1,5 +1,6 @@
 package xyz.nikitacartes.optimisedcushions;
 
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -28,6 +29,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.LightLayer;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 /**
  * Captures the vanilla cushion entity model geometry (with the exact PoseStack transforms
@@ -42,14 +44,9 @@ public final class CushionBaker {
     private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
     }
 
-    // Same vectors as com.mojang.blaze3d.platform.Lighting DIFFUSE_LIGHT_* / NETHER_DIFFUSE_LIGHT_*
-    // (private there), fed through the entity shader's mix-light formula per world-space face.
-    private static final float[] DIFFUSE_DEFAULT = diffuseByFace(
-        new Vector3f(0.2F, 1.0F, -0.7F).normalize(), new Vector3f(-0.2F, 1.0F, 0.7F).normalize()
-    );
-    private static final float[] DIFFUSE_NETHER = diffuseByFace(
-        new Vector3f(0.2F, 1.0F, -0.7F).normalize(), new Vector3f(-0.2F, -1.0F, 0.7F).normalize()
-    );
+    // Vanilla's diffuse light directions entity shader's mix-light formula per world-space face.
+    private static final float[] DIFFUSE_DEFAULT = diffuseByFace(Lighting.DIFFUSE_LIGHT_0, Lighting.DIFFUSE_LIGHT_1);
+    private static final float[] DIFFUSE_NETHER = diffuseByFace(Lighting.NETHER_DIFFUSE_LIGHT_0, Lighting.NETHER_DIFFUSE_LIGHT_1);
     private static final EnumMap<DyeColor, Identifier> SPRITE_IDS = Util.make(new EnumMap<>(DyeColor.class), sprites -> {
         for (DyeColor color : DyeColor.values()) {
             sprites.put(color, Identifier.withDefaultNamespace("entity/cushion/" + color.getName() + "_cushion"));
@@ -151,7 +148,7 @@ public final class CushionBaker {
     }
 
     /** Entity shader diffuse: min(1, 0.4 + 0.6 * (max(0, L0·N) + max(0, L1·N))) per axis face. */
-    private static float[] diffuseByFace(final Vector3f light0, final Vector3f light1) {
+    private static float[] diffuseByFace(final Vector3fc light0, final Vector3fc light1) {
         float[] byFace = new float[6];
         for (Direction direction : Direction.values()) {
             Vector3f normal = new Vector3f(direction.getUnitVec3f());
