@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "package": "xyz.nikitacartes.optimisedcushions.mixin",
+    "compatibilityLevel": "JAVA_25",
+    "client": [
+        "CushionRendererMixin",
+        "CushionRenderStateMixin",
+        "SectionCompilerMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

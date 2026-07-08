@@ -1,0 +1,5 @@
+{
+    "sources": [
+        { "type": "directory", "source": "entity/cushion", "prefix": "entity/cushion/" }
+    ]
+}

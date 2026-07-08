@@ -1,0 +1,31 @@
+{
+    "schemaVersion": 1,
+    "id": "optimisedcushions",
+    "version": "${version}",
+    "name": "Optimised Cushions",
+    "description": "Bakes static cushion entities into chunk meshes so they render like blocks instead of per-frame entity models. Client-side only, fully vanilla-compatible.",
+    "authors": [
+        "NikitaCartes"
+    ],
+    "contact": {},
+    "license": "MIT",
+    "icon": "assets/optimisedcushions/icon.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "xyz.nikitacartes.optimisedcushions.OptimisedCushionsClient"
+        ]
+    },
+    "mixins": [
+        {
+            "config": "optimisedcushions.client.mixins.json",
+            "environment": "client"
+        }
+    ],
+    "depends": {
+        "fabricloader": ">=0.19.3",
+        "minecraft": "~26.3-",
+        "java": ">=25",
+        "fabric-api": "*"
+    }
+}
