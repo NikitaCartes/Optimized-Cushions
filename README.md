@@ -1,35 +1,37 @@
 # Optimized Cushions
 
-Fabric mod for Minecraft **26.3-snapshot-3** that optimizes [cushions](https://minecraft.wiki/w/Cushion) on both sides: the client renders them as part of the chunk mesh instead of as entity models, and the server strips their per-tick entity and network-tracker overhead.
+Vanilla 26.3 added [cushions](https://minecraft.wiki/w/Cushion) as *entities*. A cushion never moves, yet it costs the same as any other entity, both on the client and on the server.  
 
-## Why
+This mod treats a cushion as what it is: a static thing. The client bakes it into the terrain so it renders like a block; the server drops the per-tick tracking and ticking overhead. 
+Gameplay is unchanged: sitting, breaking, picking, sounds, particles, drops and saves are all vanilla.
 
-Vanilla 26.3 added cushions as *entities* (`BlockAttachedEntity`). Every visible cushion pays the full per-frame entity cost: render state extraction, pose stack transforms, and re-submitting its model vertices every single frame. But a cushion is completely static — fixed position, one of 4 facings, one of 16 colors.
+## How it works
 
-On the client this mod bakes each cushion's geometry into the chunk section mesh (the same way blocks render), so after a one-time section rebuild a cushion costs **zero per-frame CPU** — it is just terrain vertices. The approach mirrors what OptimizedBlockEntities / BetterBlockEntities do for chests, signs, etc.
+A cushion is rendered like any other block: baked straight into the chunk mesh and terrain is far cheaper to draw than entities.
 
-## Server side
+On the server, cushions that have nobody sitting on them skip the entity tracker and tick-list and run through one lightweight loop instead. The moment someone sits down (or you `/ride` one) that cushion snaps back to the full vanilla path, so behavior stays exact.
 
-On cushion-heavy maps the server pays O(cushions) every tick in four places (profiled on a saturated 50 ms/tick world): the entity tracker's per-entity `sendChanges` + ticking-range lookup (~36% of the server thread), a full visibility re-check of every tracked entity on **every player movement packet** (~25%), the entity tick list machinery (~10%), and the natural-spawn entity scan (~11%). The mod removes most of that:
+## Features
 
-- **Tracker tick skip** — a quiescent cushion (nothing to sync: no pending teleport/velocity/data/passenger changes) skips the per-tick ticking-range hash lookup and the guaranteed-no-op `sendChanges()`. Any state change flips one of the checked flags first, so the vanilla resync path runs exactly when something actually needs sending.
-- **Movement-packet throttle** — cushion visibility for a player is only re-evaluated after the player moves ≥1 block or once a second, instead of on every movement packet (vanilla re-checks every tracked entity even for look-around packets). Spawn/despawn boundary error is under one block against a ≥32-block radius; new/teleported players and entity (re)spawns still evaluate immediately through the vanilla paths.
-- **Dedicated cushion ticker** — passenger-free cushions leave the vanilla entity tick list (despawn checks, per-entity ticking-range lookups, profiler scopes, vehicle checks) and are ticked by a flat loop that calls the same `Cushion.tick()`. The moment passengers are involved (someone sits, or `/ride` puts the cushion on something) it moves back to the vanilla list, so `tickPassenger`/`rideTick` semantics are vanilla-exact on the exact tick.
+- **More FPS** — cushions are free to render once baked; the boost scales with how many are on screen.
+- **See them further** — baked cushions are visible to full render distance, just like blocks, instead of the shorter vanilla entity range.
+- **Lighter servers** — big tick-time savings on cushion-heavy worlds (tracker, movement re-checks, and ticking all trimmed).
+- **Nothing lost** — every cushion interaction works exactly as in vanilla.
+- **Resource packs** — cushion textures from your resource pack are picked up automatically.
 
-The natural-spawn scan is left untouched.
+## Compatibility
 
-## What is preserved
+- **Vanilla-safe** — no protocol or save changes. The client half works on vanilla servers, and the server half serves vanilla clients.
+- **Sodium** — Client side are automatically disabled when Sodium is installed (will investigate it in the future with Sodium updates). The **server** optimizations still work.
+- Cushions fall back to the vanilla renderer while glowing, on fire, or invisible, and name tags / F3+B hitboxes always render the vanilla way.
 
-- **All functionality** — the entity is untouched: sitting, breaking, picking, hitbox, sounds, particles, support-pop and fluid checks all work.
-- **Vanilla compatibility** — no protocol or save changes. The client half works on vanilla servers; the server half serves vanilla clients (it only skips sending packets that vanilla state says would be empty).
-- **Visuals** — geometry is captured from the real `CushionModel` with the exact `CushionRenderer` transforms; lighting replicates the entity pipeline (flat lightmap at the entity light probe + the entity shader's two-light diffuse per face, including the Nether variant). Light updates re-mesh sections, so baked light stays in sync exactly like terrain does.
+## Trade-offs
 
-Cushions fall back to the vanilla entity renderer whenever they are glowing (outline), on fire, or invisible; name tags, flames and F3+B hitboxes always render through the vanilla path. Add/remove/teleport/dye changes are detected each client tick and trigger a rebuild of the affected section (~ cost of placing one block).
+A few small, deliberate differences from vanilla — none affect gameplay (drops, riding, sounds, damage and saves are identical):
 
-## Known trade-offs
+- **Client** — because cushions are baked into terrain, a change (place, break, teleport, dye) shows up on the next section rebuild, so it can flicker for a frame or two instead of updating instantly. Textures now mipmap at distance like blocks.
+- **Server** — spawn/despawn for a moving player is checked on a ~1-block / 1-second grid instead of every packet, so a cushion at the far tracking edge can appear up to one block of walking later than vanilla. Support/fluid checks in unloaded-but-not-ticking chunks are deferred rather than frozen.
 
-- **Sodium**: disabled when Sodium is present (Sodium replaces the vanilla section compiler); cushions simply render as vanilla entities there.
-- Cushion textures are added to the block atlas, so they mipmap at distance like blocks (vanilla entity textures don't). Resource pack cushion textures are picked up automatically.
-- Baked cushions stay visible up to full render distance instead of the vanilla ~entity render distance, and a cushion teleported off block-center may pop at screen edges (section-bounds culling).
-- Server: for a cushion in a loaded but not entity-ticking chunk the support/fluid poll is deferred instead of frozen (vanilla freezes the whole tick there), and periodic zero-delta keep-alive move packets for static cushions are not sent. Both are unobservable in normal play; the poll cadence itself (up to ~5 s, staggered) is vanilla behaviour.
-- Server: cushion spawn/despawn distance for a moving player is evaluated on a ≥1-block / 1-second grid instead of every packet — worst case a cushion appears one block of walking later than vanilla at the 160-block tracking edge.
+## Links
+
+- [Discord](https://discord.gg/UY4nhvUzaK)

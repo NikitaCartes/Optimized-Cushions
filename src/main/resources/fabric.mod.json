@@ -3,11 +3,16 @@
     "id": "optimizedcushions",
     "version": "${version}",
     "name": "Optimized Cushions",
-    "description": "Optimizes cushion entities on both sides: bakes static cushions into chunk meshes on the client and strips their per-tick entity/tracker overhead on the server. Fully vanilla-compatible, works with vanilla clients.",
+    "description": "Optimizes cushion entities on both sides: client- and server-side. Fully vanilla-compatible, works with vanilla clients and servers.",
     "authors": [
         "NikitaCartes"
     ],
-    "contact": {},
+    "contact": {
+        "homepage": "https://github.com/NikitaCartes/Optimized-Cushions",
+        "sources": "https://github.com/NikitaCartes/Optimized-Cushions",
+        "issues": "https://github.com/NikitaCartes/Optimized-Cushions/issues",
+        "discord": "https://discord.gg/UY4nhvUzaK"
+    },
     "license": "MIT",
     "icon": "assets/optimizedcushions/icon.png",
     "environment": "*",
