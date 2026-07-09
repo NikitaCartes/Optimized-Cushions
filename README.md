@@ -16,7 +16,7 @@ On cushion-heavy maps the server pays O(cushions) every tick in four places (pro
 - **Movement-packet throttle** — cushion visibility for a player is only re-evaluated after the player moves ≥1 block or once a second, instead of on every movement packet (vanilla re-checks every tracked entity even for look-around packets). Spawn/despawn boundary error is under one block against a ≥32-block radius; new/teleported players and entity (re)spawns still evaluate immediately through the vanilla paths.
 - **Dedicated cushion ticker** — passenger-free cushions leave the vanilla entity tick list (despawn checks, per-entity ticking-range lookups, profiler scopes, vehicle checks) and are ticked by a flat loop that calls the same `Cushion.tick()`. The moment passengers are involved (someone sits, or `/ride` puts the cushion on something) it moves back to the vanilla list, so `tickPassenger`/`rideTick` semantics are vanilla-exact on the exact tick.
 
-The natural-spawn scan is untouched (no cushion-scoped lever there; candidate for a follow-up).
+The natural-spawn scan is left untouched.
 
 ## What is preserved
 

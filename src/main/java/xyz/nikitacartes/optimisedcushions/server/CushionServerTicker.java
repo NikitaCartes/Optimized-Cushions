@@ -10,13 +10,10 @@ import xyz.nikitacartes.optimisedcushions.mixin.server.BlockAttachedEntityAccess
 import xyz.nikitacartes.optimisedcushions.mixin.server.ServerLevelAccessor;
 
 /**
- * Ticks passenger-free cushions outside the vanilla entity tick list, skipping the
- * per-entity pipeline overhead (despawn checks, per-tick ticking-range lookups,
- * profiler scopes) that dominates server time on cushion-heavy maps.
- *
- * <p>Cushions with a rider, or riding something themselves, live in the vanilla tick
- * list instead so passenger ticking ({@code tickPassenger}/{@code rideTick}) works
- * exactly as vanilla.
+ * Ticks passenger-free cushions outside the vanilla entity tick list, skipping the per-entity
+ * overhead (despawn checks, ticking-range lookups, profiler scopes) that dominates server time
+ * on cushion-heavy maps. Cushions with passengers stay on the vanilla list so tickPassenger/
+ * rideTick behave exactly as vanilla.
  */
 public final class CushionServerTicker {
     private static final Consumer<Cushion> TICK_ACTION = Entity::tick;
@@ -92,7 +89,7 @@ public final class CushionServerTicker {
             BlockAttachedEntityAccessor accessor = (BlockAttachedEntityAccessor) cushion;
             if (accessor.optimisedcushions$getTicksSinceLastCheck() >= CHECK_INTERVAL
                     && !distanceManager.inEntityTickingRange(cushion.chunkPosition().pack())) {
-                // ponytail: vanilla freezes the whole tick outside entity-ticking range; we
+                // vanilla freezes the whole tick outside entity-ticking range; we
                 // instead defer the survives/fluid poll by another interval. Amortizes the
                 // ticking-range lookup to once per 100 ticks per cushion.
                 accessor.optimisedcushions$setTicksSinceLastCheck(0);

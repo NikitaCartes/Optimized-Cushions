@@ -30,7 +30,7 @@ public class ServerPlayerMixin implements ServerPlayerExt {
         ServerPlayer self = (ServerPlayer) (Object) this;
         double dx = self.getX() - this.optimisedcushions$lastEvalX;
         double dz = self.getZ() - this.optimisedcushions$lastEvalZ;
-        // First call: dx is NaN, comparison is false, evaluation happens.
+        // lastEvalX starts NaN so the first call always evaluates.
         boolean skip = dx * dx + dz * dz < RE_EVAL_DIST_SQ
                 && gameTime - this.optimisedcushions$lastEvalTime < RE_EVAL_TICKS;
         if (!skip) {

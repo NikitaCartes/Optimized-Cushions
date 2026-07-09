@@ -17,10 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xyz.nikitacartes.optimisedcushions.server.ServerPlayerExt;
 import xyz.nikitacartes.optimisedcushions.server.TrackedEntityExt;
 
-/**
- * Two tracker optimizations for static cushions. Both fields are safe as plain instance
- * state: ChunkMap runs on the server thread and neither move() nor tick() is reentrant.
- */
+/** Two tracker optimisations for static cushions. Plain fields: ChunkMap is single-threaded. */
 @Mixin(ChunkMap.class)
 public class ChunkMapMixin {
     @Unique
@@ -29,10 +26,8 @@ public class ChunkMapMixin {
     @Unique
     private boolean optimisedcushions$currentEntityQuiescent;
 
-    // --- move(): vanilla re-evaluates visibility of EVERY tracked entity on every
-    // movement packet (rotation-only included). Cushions never move, so their visibility
-    // for a player only changes with player movement; a sub-block move changes nothing.
-
+    // move(): cushions never move, so their visibility only changes when the player does;
+    // vanilla re-checks every tracked entity on every move packet, even rotation-only ones.
     @Inject(method = "move(Lnet/minecraft/server/level/ServerPlayer;)V", at = @At("HEAD"))
     private void optimisedcushions$classifyMove(final ServerPlayer player, final CallbackInfo ci) {
         this.optimisedcushions$skipCushionsThisMove =
@@ -56,11 +51,8 @@ public class ChunkMapMixin {
         original.call(trackedEntity, player);
     }
 
-    // --- tick(): vanilla does a ticking-range hash lookup plus sendChanges() for every
-    // tracked entity every tick. For a quiescent cushion sendChanges() is a guaranteed
-    // no-op, so both are skipped. Any state that would make it send something (teleport,
-    // dye, glowing, hurt, mount/dismount) flips one of the checked flags first.
-
+    // tick(): for a quiescent cushion sendChanges() is a guaranteed no-op, so skip it and
+    // the ticking-range lookup. Anything that would make it send flips a checked flag first.
     @WrapOperation(
             method = "tick()V",
             at = @At(
@@ -74,8 +66,7 @@ public class ChunkMapMixin {
     ) {
         TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
         Entity entity = ext.optimisedcushions$entity();
-        // needsSync is not checked here: when it is set, the || chain short-circuits
-        // before the ticking-range call and vanilla handles the entity in full.
+        // needsSync isn't listed: when set, the || chain short-circuits before this runs.
         this.optimisedcushions$currentEntityQuiescent = entity instanceof Cushion
                 && !entity.syncVelocity
                 && !entity.syncPosition
