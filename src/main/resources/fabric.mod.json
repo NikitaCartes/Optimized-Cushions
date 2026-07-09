@@ -3,14 +3,14 @@
     "id": "optimisedcushions",
     "version": "${version}",
     "name": "Optimised Cushions",
-    "description": "Bakes static cushion entities into chunk meshes so they render like blocks instead of per-frame entity models. Client-side only, fully vanilla-compatible.",
+    "description": "Optimises cushion entities on both sides: bakes static cushions into chunk meshes on the client and strips their per-tick entity/tracker overhead on the server. Fully vanilla-compatible, works with vanilla clients.",
     "authors": [
         "NikitaCartes"
     ],
     "contact": {},
     "license": "MIT",
     "icon": "assets/optimisedcushions/icon.png",
-    "environment": "client",
+    "environment": "*",
     "accessWidener": "optimisedcushions.accesswidener",
     "entrypoints": {
         "client": [
@@ -21,7 +21,8 @@
         {
             "config": "optimisedcushions.client.mixins.json",
             "environment": "client"
-        }
+        },
+        "optimisedcushions.mixins.json"
     ],
     "depends": {
         "fabricloader": ">=0.19.3",
