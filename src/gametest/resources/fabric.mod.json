@@ -1,19 +1,19 @@
 {
     "schemaVersion": 1,
-    "id": "optimisedcushions-test",
+    "id": "optimizedcushions-test",
     "version": "1.0.0",
-    "name": "Optimised Cushions Test",
+    "name": "Optimized Cushions Test",
     "environment": "*",
     "depends": {
-        "optimisedcushions": "*",
+        "optimizedcushions": "*",
         "fabric-gametest-api-v1": "*"
     },
     "entrypoints": {
         "fabric-gametest": [
-            "xyz.nikitacartes.optimisedcushions.gametest.CushionServerGameTests"
+            "xyz.nikitacartes.optimizedcushions.gametest.CushionServerGameTests"
         ],
         "fabric-client-gametest": [
-            "xyz.nikitacartes.optimisedcushions.gametest.CushionClientGameTest"
+            "xyz.nikitacartes.optimizedcushions.gametest.CushionClientGameTest"
         ]
     }
 }

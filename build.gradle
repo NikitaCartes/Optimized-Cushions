@@ -10,12 +10,12 @@ repositories {
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/optimisedcushions.accesswidener")
+    accessWidenerPath = file("src/main/resources/optimizedcushions.accesswidener")
 
     splitEnvironmentSourceSets()
 
     mods {
-        "optimisedcushions" {
+        "optimizedcushions" {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
         }
@@ -25,7 +25,7 @@ loom {
 fabricApi {
     configureTests {
         createSourceSet = true
-        modId = "optimisedcushions-test"
+        modId = "optimizedcushions-test"
         eula = true
         enableGameTests = true
         enableClientGameTests = true

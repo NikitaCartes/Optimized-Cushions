@@ -1,12 +1,12 @@
-# Optimised Cushions
+# Optimized Cushions
 
-Fabric mod for Minecraft **26.3-snapshot-3** that optimises [cushions](https://minecraft.wiki/w/Cushion) on both sides: the client renders them as part of the chunk mesh instead of as entity models, and the server strips their per-tick entity and network-tracker overhead.
+Fabric mod for Minecraft **26.3-snapshot-3** that optimizes [cushions](https://minecraft.wiki/w/Cushion) on both sides: the client renders them as part of the chunk mesh instead of as entity models, and the server strips their per-tick entity and network-tracker overhead.
 
 ## Why
 
 Vanilla 26.3 added cushions as *entities* (`BlockAttachedEntity`). Every visible cushion pays the full per-frame entity cost: render state extraction, pose stack transforms, and re-submitting its model vertices every single frame. But a cushion is completely static — fixed position, one of 4 facings, one of 16 colors.
 
-On the client this mod bakes each cushion's geometry into the chunk section mesh (the same way blocks render), so after a one-time section rebuild a cushion costs **zero per-frame CPU** — it is just terrain vertices. The approach mirrors what OptimisedBlockEntities / BetterBlockEntities do for chests, signs, etc.
+On the client this mod bakes each cushion's geometry into the chunk section mesh (the same way blocks render), so after a one-time section rebuild a cushion costs **zero per-frame CPU** — it is just terrain vertices. The approach mirrors what OptimizedBlockEntities / BetterBlockEntities do for chests, signs, etc.
 
 ## Server side
 

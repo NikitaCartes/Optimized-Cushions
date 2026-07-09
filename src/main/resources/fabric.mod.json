@@ -1,28 +1,28 @@
 {
     "schemaVersion": 1,
-    "id": "optimisedcushions",
+    "id": "optimizedcushions",
     "version": "${version}",
-    "name": "Optimised Cushions",
-    "description": "Optimises cushion entities on both sides: bakes static cushions into chunk meshes on the client and strips their per-tick entity/tracker overhead on the server. Fully vanilla-compatible, works with vanilla clients.",
+    "name": "Optimized Cushions",
+    "description": "Optimizes cushion entities on both sides: bakes static cushions into chunk meshes on the client and strips their per-tick entity/tracker overhead on the server. Fully vanilla-compatible, works with vanilla clients.",
     "authors": [
         "NikitaCartes"
     ],
     "contact": {},
     "license": "MIT",
-    "icon": "assets/optimisedcushions/icon.png",
+    "icon": "assets/optimizedcushions/icon.png",
     "environment": "*",
-    "accessWidener": "optimisedcushions.accesswidener",
+    "accessWidener": "optimizedcushions.accesswidener",
     "entrypoints": {
         "client": [
-            "xyz.nikitacartes.optimisedcushions.OptimisedCushionsClient"
+            "xyz.nikitacartes.optimizedcushions.OptimizedCushionsClient"
         ]
     },
     "mixins": [
         {
-            "config": "optimisedcushions.client.mixins.json",
+            "config": "optimizedcushions.client.mixins.json",
             "environment": "client"
         },
-        "optimisedcushions.mixins.json"
+        "optimizedcushions.mixins.json"
     ],
     "depends": {
         "fabricloader": ">=0.19.3",
