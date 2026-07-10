@@ -14,10 +14,13 @@ On the server, cushions that have nobody sitting on them skip the entity tracker
 ## Features
 
 - **More FPS** — cushions are free to render once baked; the boost scales with how many are on screen.
+- **Less memory pressure** — especially on the client.
 - **See them further** — baked cushions are visible to full render distance, just like blocks, instead of the shorter vanilla entity range.
 - **Lighter servers** — big tick-time savings on cushion-heavy worlds (tracker, movement re-checks, and ticking all trimmed).
 - **Nothing lost** — every cushion interaction works exactly as in vanilla.
 - **Resource packs** — cushion textures from your resource pack are picked up automatically.
+
+![image](images/example.png)
 
 ## Compatibility
 
