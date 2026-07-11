@@ -39,4 +39,6 @@ A few small, deliberate differences from vanilla — none affect gameplay (drops
 
 ## Links
 
+- [Modrinth](https://modrinth.com/mod/optimized-cushions)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/optimized-cushions)
 - [Discord](https://discord.gg/UY4nhvUzaK)
