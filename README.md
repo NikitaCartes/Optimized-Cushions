@@ -5,6 +5,8 @@ Vanilla 26.3 added [cushions](https://minecraft.wiki/w/Cushion) as *entities*. A
 This mod treats a cushion as what it is: a static thing. The client bakes it into the terrain so it renders like a block; the server drops the per-tick tracking and ticking overhead. 
 Gameplay is unchanged: sitting, breaking, picking, sounds, particles, drops and saves are all vanilla.
 
+To be honest: Cushions are already a very light entity expecially server-side, so you will only see a difference if you have a LOT of them. 
+
 ## How it works
 
 A cushion is rendered like any other block: baked straight into the chunk mesh and terrain is far cheaper to draw than entities.
