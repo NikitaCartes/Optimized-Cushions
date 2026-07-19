@@ -6,7 +6,6 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.Cushion;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -14,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.server.ServerPlayerExt;
 import xyz.nikitacartes.optimizedcushions.server.TrackedEntityExt;
 
@@ -45,7 +45,7 @@ public class ChunkMapMixin {
             final @Coerce Object trackedEntity, final ServerPlayer player, final Operation<Void> original
     ) {
         if (this.optimizedcushions$skipCushionsThisMove
-                && ((TrackedEntityExt) trackedEntity).optimizedcushions$entity() instanceof Cushion) {
+                && ((TrackedEntityExt) trackedEntity).optimizedcushions$entity() instanceof OptCushion) {
             return;
         }
         original.call(trackedEntity, player);
@@ -67,9 +67,13 @@ public class ChunkMapMixin {
         TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
         Entity entity = ext.optimizedcushions$entity();
         // needsSync isn't listed: when set, the || chain short-circuits before this runs.
-        this.optimizedcushions$currentEntityQuiescent = entity instanceof Cushion
-                && !entity.syncVelocity
+        // syncVelocity/syncPosition are 26.3-only Entity flags; a Cushion is a static
+        // BlockAttachedEntity so they are invariantly false for it, hence safe to omit pre-26.3.
+        this.optimizedcushions$currentEntityQuiescent = entity instanceof OptCushion
+                //? if >=26.3 {
+                /*&& !entity.syncVelocity
                 && !entity.syncPosition
+                *///?}
                 && !entity.getEntityData().isDirty()
                 && entity.getPassengers().isEmpty()
                 && ((ServerEntityAccessor) ext.optimizedcushions$serverEntity())

@@ -1,12 +1,14 @@
 package xyz.nikitacartes.optimizedcushions.mixin.server;
 
-import net.minecraft.world.entity.decoration.Cushion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
+import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.server.CushionServerExt;
 
-@Mixin(Cushion.class)
-public class CushionMixin implements CushionServerExt {
+// Targets the Cushion-Backport entity by name (no compile dependency). Also stamps the
+// OptCushion marker so the other mixins can recognise it via instanceof.
+@Mixin(targets = "com.leclowndu93150.cushionbackport.entity.Cushion")
+public class CushionMixin implements CushionServerExt, OptCushion {
     @Unique
     private boolean optimizedcushions$serverTicking;
 

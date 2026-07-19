@@ -10,16 +10,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
-import net.minecraft.world.entity.decoration.Cushion;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 
 /**
- * Client-side index of cushion entities, grouped by the chunk section that owns them
+ * Client-side index of Cushion-Backport cushions, grouped by the chunk section that owns them
  * (the section of {@code blockPosition()}). Event-driven: load/unload events and the
  * setPos/onSyncedDataUpdated mixin hooks feed a dirty queue drained at end of tick.
  * Mutated only on the client main thread; read from section meshing worker threads
  * via the concurrent {@link #BY_SECTION} map holding immutable snapshots.
+ *
+ * <p>Cushions are typed as {@link Entity} (marked {@link OptCushion}); the backport-specific colour
+ * is read through the {@link CushionExt} duck rather than a compile dependency.
  */
 public final class CushionTracker {
     /** Immutable per-cushion state used for baking. */
@@ -27,14 +30,14 @@ public final class CushionTracker {
     }
 
     private static final Map<Integer, Snapshot> SNAPSHOTS = new HashMap<>();
-    private static final Set<Cushion> DIRTY = Collections.newSetFromMap(new IdentityHashMap<>());
+    private static final Set<Entity> DIRTY = Collections.newSetFromMap(new IdentityHashMap<>());
     private static final ConcurrentHashMap<Long, ConcurrentHashMap<Integer, Snapshot>> BY_SECTION = new ConcurrentHashMap<>();
     private static Level lastLevel;
 
     private CushionTracker() {
     }
 
-    public static void onLoad(final Cushion cushion) {
+    public static void onLoad(final Entity cushion) {
         // Flushing only in tick() would wipe spawn-chunk cushions: on a level change
         // their ENTITY_LOAD fires before the first end-of-tick.
         if (cushion.level() != lastLevel) {
@@ -43,12 +46,12 @@ public final class CushionTracker {
         update(cushion);
     }
 
-    public static void onUnload(final Cushion cushion) {
+    public static void onUnload(final Entity cushion) {
         DIRTY.remove(cushion);
         drop(cushion);
     }
 
-    public static void markChanged(final Cushion cushion) {
+    public static void markChanged(final Entity cushion) {
         DIRTY.add(cushion);
     }
 
@@ -61,7 +64,7 @@ public final class CushionTracker {
             return;
         }
 
-        for (Cushion cushion : DIRTY) {
+        for (Entity cushion : DIRTY) {
             if (cushion.isRemoved() || cushion.level() != minecraft.level) {
                 drop(cushion);
             } else {
@@ -72,8 +75,8 @@ public final class CushionTracker {
     }
 
     /** Whether the given cushion is currently rendered as chunk geometry instead of an entity model. */
-    public static boolean isBaked(final Cushion cushion) {
-        return ((CushionExt)cushion).optimizedcushions$isBaked();
+    public static boolean isBaked(final Entity cushion) {
+        return ((CushionExt) cushion).optimizedcushions$isBaked();
     }
 
     /** Read from section meshing threads. Returns null when the section has no baked cushions. */
@@ -88,10 +91,10 @@ public final class CushionTracker {
         lastLevel = level;
     }
 
-    private static void update(final Cushion cushion) {
+    private static void update(final Entity cushion) {
         Snapshot next = snapshot(cushion);
         Snapshot prev = SNAPSHOTS.put(cushion.getId(), next);
-        ((CushionExt)cushion).optimizedcushions$setBaked(next.bakeable());
+        ((CushionExt) cushion).optimizedcushions$setBaked(next.bakeable());
         if (next.equals(prev)) {
             return;
         }
@@ -109,8 +112,8 @@ public final class CushionTracker {
         }
     }
 
-    private static void drop(final Cushion cushion) {
-        ((CushionExt)cushion).optimizedcushions$setBaked(false);
+    private static void drop(final Entity cushion) {
+        ((CushionExt) cushion).optimizedcushions$setBaked(false);
         Snapshot prev = SNAPSHOTS.remove(cushion.getId());
         if (prev != null && prev.bakeable()) {
             removeFromSection(prev.sectionKey(), cushion.getId());
@@ -120,18 +123,18 @@ public final class CushionTracker {
 
     // isCurrentlyGlowing, not Minecraft.shouldEntityAppearGlowing: its extra branch
     // (spectator outlines) only applies to players.
-    private static boolean isBakeable(final Cushion cushion) {
+    private static boolean isBakeable(final Entity cushion) {
         return !cushion.isCurrentlyGlowing() && !cushion.displayFireAnimation() && !cushion.isInvisible();
     }
 
-    private static Snapshot snapshot(final Cushion cushion) {
+    private static Snapshot snapshot(final Entity cushion) {
         BlockPos lightPos = BlockPos.containing(cushion.getLightProbePosition(1.0F));
         return new Snapshot(
             cushion.getX(),
             cushion.getY(),
             cushion.getZ(),
             Direction.fromYRot(cushion.getYRot()),
-            cushion.getColor(),
+            ((CushionExt) cushion).optimizedcushions$color(),
             lightPos,
             SectionPos.asLong(cushion.blockPosition()),
             isBakeable(cushion)
@@ -149,6 +152,12 @@ public final class CushionTracker {
     }
 
     private static void markDirty(final long sectionKey) {
-        Minecraft.getInstance().levelExtractor.setSectionDirty(SectionPos.x(sectionKey), SectionPos.y(sectionKey), SectionPos.z(sectionKey));
+        int x = SectionPos.x(sectionKey);
+        int y = SectionPos.y(sectionKey);
+        int z = SectionPos.z(sectionKey);
+        //? if >=26.2 {
+        Minecraft.getInstance().levelExtractor.setSectionDirty(x, y, z);
+        //?} else
+        /*Minecraft.getInstance().levelRenderer.setSectionDirty(x, y, z);*/
     }
 }

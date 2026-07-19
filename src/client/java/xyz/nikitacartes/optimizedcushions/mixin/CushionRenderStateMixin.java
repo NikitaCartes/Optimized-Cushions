@@ -1,11 +1,11 @@
+//? if >=1.21.5 {
 package xyz.nikitacartes.optimizedcushions.mixin;
 
-import net.minecraft.client.renderer.entity.state.CushionRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import xyz.nikitacartes.optimizedcushions.CushionRenderStateExt;
 
-@Mixin(CushionRenderState.class)
+@Mixin(targets = "com.leclowndu93150.cushionbackport.client.CushionRenderState")
 public class CushionRenderStateMixin implements CushionRenderStateExt {
     @Unique
     private boolean optimizedcushions$baked;
@@ -20,3 +20,4 @@ public class CushionRenderStateMixin implements CushionRenderStateExt {
         return this.optimizedcushions$baked;
     }
 }
+//?}

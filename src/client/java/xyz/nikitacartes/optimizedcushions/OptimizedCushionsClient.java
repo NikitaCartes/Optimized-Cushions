@@ -1,33 +1,75 @@
 package xyz.nikitacartes.optimizedcushions;
 
+//? if fabric {
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.world.entity.decoration.Cushion;
+//?} else {
+/*import net.minecraft.client.Minecraft;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+*///?}
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//? if fabric {
 public class OptimizedCushionsClient implements ClientModInitializer {
-    public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushions");
+    public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
 
     @Override
     public void onInitializeClient() {
         if (FabricLoader.getInstance().isModLoaded("sodium")) {
-            LOGGER.warn("Sodium detected - Optimized Cushions is disabled, cushions render as vanilla entities.");
+            //? if >=1.21.1 {
+            LOGGER.info("Sodium detected - baking cushions into Sodium chunk meshes.");
+            //?} else {
+            /*LOGGER.warn("Sodium detected - Optimized Cushions Backport client baking is disabled, cushions render as entities.");
             return;
+            *///?}
         }
 
         ClientEntityEvents.ENTITY_LOAD.register((entity, level) -> {
-            if (entity instanceof Cushion cushion) {
-                CushionTracker.onLoad(cushion);
+            if (entity instanceof OptCushion) {
+                CushionTracker.onLoad(entity);
             }
         });
         ClientEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
-            if (entity instanceof Cushion cushion) {
-                CushionTracker.onUnload(cushion);
+            if (entity instanceof OptCushion) {
+                CushionTracker.onUnload(entity);
             }
         });
         ClientTickEvents.END_CLIENT_TICK.register(CushionTracker::tick);
     }
 }
+//?} else {
+/*@Mod(value = "optimizedcushionsbackport", dist = Dist.CLIENT)
+public class OptimizedCushionsClient {
+    public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
+
+    // NeoForge is 1.21.1+ only, so there's no <1.21.1 entity-fallback branch (unlike the Fabric
+    // initializer). @Mod is Dist.CLIENT so this never loads on a dedicated server.
+    public OptimizedCushionsClient() {
+        if (ModList.get().isLoaded("sodium")) {
+            LOGGER.info("Sodium detected - baking cushions into Sodium chunk meshes.");
+        }
+        NeoForge.EVENT_BUS.addListener((EntityJoinLevelEvent event) -> {
+            if (event.getLevel().isClientSide() && event.getEntity() instanceof OptCushion) {
+                CushionTracker.onLoad(event.getEntity());
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((EntityLeaveLevelEvent event) -> {
+            if (event.getLevel().isClientSide() && event.getEntity() instanceof OptCushion) {
+                CushionTracker.onUnload(event.getEntity());
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
+            CushionTracker.tick(Minecraft.getInstance());
+        });
+    }
+}
+*///?}

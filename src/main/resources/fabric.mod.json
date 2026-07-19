@@ -1,22 +1,19 @@
 {
     "schemaVersion": 1,
-    "id": "optimizedcushions",
+    "id": "optimizedcushionsbackport",
     "version": "${version}",
-    "name": "Optimized Cushions",
-    "description": "Optimizes cushion entities on both sides: client- and server-side. Fully vanilla-compatible, works with vanilla clients and servers.",
+    "name": "Optimized Cushions Backport",
+    "description": "Optimizes Cushion-Backport cushion entities on both sides, client- and server-side. Vanilla-compatible.",
     "authors": [
         "NikitaCartes"
     ],
     "contact": {
         "homepage": "https://github.com/NikitaCartes/Optimized-Cushions",
         "sources": "https://github.com/NikitaCartes/Optimized-Cushions",
-        "issues": "https://github.com/NikitaCartes/Optimized-Cushions/issues",
-        "discord": "https://discord.gg/UY4nhvUzaK"
+        "issues": "https://github.com/NikitaCartes/Optimized-Cushions/issues"
     },
     "license": "MIT",
-    "icon": "assets/optimizedcushions/icon.png",
     "environment": "*",
-    "accessWidener": "optimizedcushions.accesswidener",
     "entrypoints": {
         "client": [
             "xyz.nikitacartes.optimizedcushions.OptimizedCushionsClient"
@@ -30,9 +27,9 @@
         "optimizedcushions.mixins.json"
     ],
     "depends": {
-        "fabricloader": ">=0.19.3",
-        "minecraft": "~26.3-",
-        "java": ">=25",
+        "fabricloader": ">=0.16.10",
+        "minecraft": "${supported_minecraft_version}",
+        "cushionbackport": "*",
         "fabric-api": "*"
     }
 }

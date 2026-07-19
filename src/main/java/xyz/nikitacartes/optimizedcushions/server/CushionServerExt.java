@@ -1,6 +1,6 @@
 package xyz.nikitacartes.optimizedcushions.server;
 
-/** Duck interface on {@code Cushion}: where the server side currently ticks it. */
+/** Duck interface on the backport Cushion: where the server side currently ticks it. */
 public interface CushionServerExt {
     /** True between onTickingStart and onTickingEnd on the server. */
     boolean optimizedcushions$isServerTicking();

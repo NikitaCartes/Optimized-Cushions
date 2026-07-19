@@ -1,0 +1,48 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/NikitaCartes/Optimized-Cushions/issues"
+
+[[mods]]
+modId = "optimizedcushionsbackport"
+version = "${version}"
+displayName = "Optimized Cushions Backport"
+displayURL = "https://github.com/NikitaCartes/Optimized-Cushions"
+authors = "NikitaCartes"
+description = '''
+Optimizes Cushion-Backport cushion entities on both sides, client- and server-side. Vanilla-compatible.
+'''
+
+# Side-gating is in the configs: server mixins in "mixins", client mixins in "client" (skipped on a
+# dedicated server). No refmap (NeoForge runs Mojmap).
+[[mixins]]
+config = "optimizedcushions.mixins.json"
+
+[[mixins]]
+config = "optimizedcushions.client.mixins.json"
+
+# See META-INF/accesstransformer.cfg — widens ModelPart.Polygon/Vertex for the <1.21.11 baker path.
+[[accessTransformers]]
+file = "META-INF/accesstransformer.cfg"
+
+[[dependencies.optimizedcushionsbackport]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neoforge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.optimizedcushionsbackport]]
+modId = "minecraft"
+type = "required"
+versionRange = "${supported_minecraft_version}"
+ordering = "NONE"
+side = "BOTH"
+
+# The mod this addon optimises. Required, matching the Fabric depends.
+[[dependencies.optimizedcushionsbackport]]
+modId = "cushionbackport"
+type = "required"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"

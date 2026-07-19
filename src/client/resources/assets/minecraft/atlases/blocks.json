@@ -1,0 +1,68 @@
+{
+    "sources": [
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/white_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/orange_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/magenta_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/light_blue_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/yellow_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/lime_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/pink_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/gray_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/light_gray_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/cyan_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/purple_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/blue_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/brown_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/green_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/red_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "cushionbackport:entity/cushion/black_cushion"
+        }
+    ]
+}

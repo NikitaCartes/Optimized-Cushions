@@ -1,3 +1,4 @@
+//? if >=26.2 {
 package xyz.nikitacartes.optimizedcushions.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -5,9 +6,9 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.extract.LevelExtractor;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.Cushion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 @Mixin(LevelExtractor.class)
@@ -31,9 +32,10 @@ public class LevelExtractorMixin {
         final double camZ,
         final Operation<Boolean> original
     ) {
-        if (entity instanceof Cushion cushion && CushionTracker.isBaked(cushion) && !cushion.hasCustomName()) {
+        if (entity instanceof OptCushion && CushionTracker.isBaked(entity) && !entity.hasCustomName()) {
             return false;
         }
         return original.call(extractor, entity, frustum, camX, camY, camZ);
     }
 }
+//?}
