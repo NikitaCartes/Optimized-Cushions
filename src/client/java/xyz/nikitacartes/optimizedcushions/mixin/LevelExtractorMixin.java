@@ -8,8 +8,8 @@ import net.minecraft.client.renderer.extract.LevelExtractor;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
+import xyz.nikitacartes.optimizedcushions.OptCushion;
 
 @Mixin(LevelExtractor.class)
 public class LevelExtractorMixin {

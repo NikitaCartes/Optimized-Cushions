@@ -29,7 +29,11 @@ Built on [Stonecutter](https://stonecutter.kikugie.dev/) (flat multiloader) from
 
 Planned: Forge (1.18.2–1.20.1) and legacy Fabric (1.18.2, 1.19.2) — see the ROADMAP.
 
-> Status: builds green on all 9 nodes; in-game testing is still in progress.
+> Status: builds green on all 9 nodes and launch-tested in dev (client + dedicated server, with and
+> without Sodium). Note that Loom's dev runtime is Mojang-mapped, so it can't surface mixin-remap issues
+> that only appear against production's intermediary names — the obfuscated-Fabric nodes (1.20.1, 1.21.1,
+> 1.21.11) therefore ship a Mixin refmap so their injections into the cushion entity apply in production.
+> In-game verification on a production launcher is in progress.
 
 ## Build
 

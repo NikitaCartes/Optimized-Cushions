@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.mixin.server.BlockAttachedEntityAccessor;
 import xyz.nikitacartes.optimizedcushions.mixin.server.ServerLevelAccessor;
 

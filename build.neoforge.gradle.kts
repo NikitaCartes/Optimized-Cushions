@@ -31,7 +31,14 @@ neoForge {
     accessTransformers.from(rootProject.file("src/main/resources/META-INF/accesstransformer.cfg"))
     // MDG creates no run tasks unless declared. Share the root run/ dir (reuses its eula.txt).
     runs {
-        create("client") { client(); gameDirectory.set(rootProject.file("run")) }
+        create("client") {
+            client()
+            gameDirectory.set(rootProject.file("run"))
+            // Dev convenience: -Pquickplay=<world> makes runClient join that singleplayer world directly.
+            findProperty("quickplay")?.let { world ->
+                programArguments.addAll("--quickPlaySingleplayer", world as String)
+            }
+        }
         create("server") { server(); gameDirectory.set(rootProject.file("run")) }
     }
     mods {
@@ -60,15 +67,27 @@ dependencies {
     }
 }
 
+val javaVersion = if (stonecutter.eval(stonecutter.current.version, ">=26.1")) 25 else 21
+
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+    sourceCompatibility = JavaVersion.toVersion(javaVersion)
+    targetCompatibility = JavaVersion.toVersion(javaVersion)
     withSourcesJar()
 }
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
-    options.release.set(25)
+    options.release.set(javaVersion)
+}
+
+tasks.register<Copy>("collectJars") {
+    group = "build"
+    from(tasks.jar.map { it.archiveFile })
+    into(rootProject.layout.buildDirectory.file("libs"))
+    dependsOn("build")
 }
 
 // ModDevGradle only jars `main`; fold the client source set (classes + processed client mixin config) in.

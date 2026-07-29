@@ -41,9 +41,19 @@ public abstract class SectionCompilerMixin {
     /**
      * Runs after the block loop, right before the started layers are built into meshes,
      * and appends the quads of every baked cushion in this section to the CUTOUT layer.
+     *
+     * <p>NeoForge patches {@code compile}: the vanilla 4-arg signature becomes a delegating shim and
+     * the real body (with the {@code Map.entrySet} anchor) moves to a 5-arg overload that also takes
+     * the {@code AddSectionGeometryEvent} renderer list — target that overload explicitly there.
      */
     @Inject(
+        //? if neoforge && >=1.21.11 {
+        /*method = "compile(Lnet/minecraft/core/SectionPos;Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;Lcom/mojang/blaze3d/vertex/VertexSorting;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;Ljava/util/List;)Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;",
+        *///?} elif neoforge {
+        /*method = "compile(Lnet/minecraft/core/SectionPos;Lnet/minecraft/client/renderer/chunk/RenderChunkRegion;Lcom/mojang/blaze3d/vertex/VertexSorting;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;Ljava/util/List;)Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;",
+        *///?} else {
         method = "compile",
+        //?}
         at = @At(value = "INVOKE", target = "Ljava/util/Map;entrySet()Ljava/util/Set;", ordinal = 0)
     )
     private void optimizedcushions$bakeCushions(
@@ -54,6 +64,9 @@ public abstract class SectionCompilerMixin {
         /*final RenderChunkRegion region,*/
         final VertexSorting vertexSorting,
         final SectionBufferBuilderPack builders,
+        //? if neoforge {
+        /*final java.util.List<?> additionalRenderers,
+        *///?}
         final CallbackInfoReturnable<SectionCompiler.Results> cir,
         // By ordinal, not name: the local is `startedLayers` on 26.x but `map` below; it is the only
         // Map<layer, BufferBuilder> in compile(), so ordinal 0 is unambiguous.

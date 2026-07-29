@@ -10,7 +10,6 @@ stonecutter {
     properties.tags(version, loader)
 }
 
-
 base.archivesName = "${property("mod_id")}-fabric-mc${property("minecraft_version")}"
 
 repositories {
@@ -28,6 +27,10 @@ loom {
     runConfigs.all {
         ideConfigGenerated(true)
         runDir = "../../run"
+    }
+    // Dev convenience: -Pquickplay=<world> makes runClient join that singleplayer world directly.
+    findProperty("quickplay")?.let { world ->
+        runConfigs["client"].programArgs("--quickPlaySingleplayer", world as String)
     }
 }
 
@@ -64,6 +67,14 @@ java {
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.release.set(25)
+}
+
+// `gradlew collectJars` on the root runs this in every node, gathering all jars into build/libs.
+tasks.register<Copy>("collectJars") {
+    group = "build"
+    from(tasks.jar.map { it.archiveFile })
+    into(rootProject.layout.buildDirectory.file("libs"))
+    dependsOn("build")
 }
 
 // Resolve project properties outside the task lambda: inside `tasks.processResources { }`

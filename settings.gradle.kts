@@ -24,9 +24,7 @@ plugins {
 // added as each loader/era is ported — see ROADMAP.md.
 stonecutter {
     create(rootProject) {
-        // Deobfuscated Fabric (26.x snapshots — Mojang-native jars). Server-side wired; 26.2 is the
-        // reference node. Obfuscated Fabric (<=1.21.11) needs build.fabric-obf.gradle.kts and is added
-        // with its per-version //? guards next — see ROADMAP.md.
+        // Deobfuscated Fabric (26.x snapshots ship Mojang-native jars); 26.2 is the reference node.
         listOf("26.1.2", "26.2").forEach { mc ->
             versions("$mc-fabric" to mc).buildscript("build.fabric-deobf.gradle.kts")
         }
