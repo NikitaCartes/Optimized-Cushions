@@ -76,6 +76,14 @@ public final class CushionBaker {
     private static final float[] DIFFUSE_NETHER = diffuseByFace(NETHER_DIFFUSE_LIGHT_0, NETHER_DIFFUSE_LIGHT_1);
     private static final EnumMap<DyeColor, Identifier> SPRITE_IDS = buildSpriteIds();
 
+    // ModelPart vertices store normalized (0..1) texture coordinates. TextureAtlasSprite.getU/getV
+    // take that form from 1.21 on, but 1.20.1 takes 0..16 block-texture space and divides by 16.
+    //? if =1.20.1 {
+    /*private static final float UV_SCALE = 16.0F;
+    *///?} else {
+    private static final float UV_SCALE = 1.0F;
+    //?}
+
     private static volatile CaptureSet captured;
 
     private CushionBaker() {
@@ -134,10 +142,10 @@ public final class CushionBaker {
                 template.positions()[1],
                 template.positions()[2],
                 template.positions()[3],
-                UVPair.pack(sprite.getU(template.u()[0]), sprite.getV(template.v()[0])),
-                UVPair.pack(sprite.getU(template.u()[1]), sprite.getV(template.v()[1])),
-                UVPair.pack(sprite.getU(template.u()[2]), sprite.getV(template.v()[2])),
-                UVPair.pack(sprite.getU(template.u()[3]), sprite.getV(template.v()[3])),
+                UVPair.pack(sprite.getU(template.u()[0] * UV_SCALE), sprite.getV(template.v()[0] * UV_SCALE)),
+                UVPair.pack(sprite.getU(template.u()[1] * UV_SCALE), sprite.getV(template.v()[1] * UV_SCALE)),
+                UVPair.pack(sprite.getU(template.u()[2] * UV_SCALE), sprite.getV(template.v()[2] * UV_SCALE)),
+                UVPair.pack(sprite.getU(template.u()[3] * UV_SCALE), sprite.getV(template.v()[3] * UV_SCALE)),
                 template.face(),
                 materialInfo
             );
@@ -162,7 +170,7 @@ public final class CushionBaker {
             int color = 0xFF000000 | (channel << 16) | (channel << 8) | channel;
             for (int i = 0; i < 4; i++) {
                 Vector3f pos = template.positions()[i];
-                emitVertex(buffer, offsetX + pos.x(), offsetY + pos.y(), offsetZ + pos.z(), color, sprite.getU(template.u()[i]), sprite.getV(template.v()[i]), light, face);
+                emitVertex(buffer, offsetX + pos.x(), offsetY + pos.y(), offsetZ + pos.z(), color, sprite.getU(template.u()[i] * UV_SCALE), sprite.getV(template.v()[i] * UV_SCALE), light, face);
             }
         }
     }
@@ -199,7 +207,7 @@ public final class CushionBaker {
                 Vector3f pos = template.positions()[i];
                 buffer.addVertex(offsetX + pos.x(), offsetY + pos.y(), offsetZ + pos.z())
                     .setColor(color)
-                    .setUv(sprite.getU(template.u()[i]), sprite.getV(template.v()[i]))
+                    .setUv(sprite.getU(template.u()[i] * UV_SCALE), sprite.getV(template.v()[i] * UV_SCALE))
                     .setLight(light)
                     .setNormal((float)face.getStepX(), (float)face.getStepY(), (float)face.getStepZ());
             }
@@ -296,7 +304,9 @@ public final class CushionBaker {
 
                     for (int i = 0; i < 4; i++) {
                         ModelPart.Vertex vertex = polygon.vertices[i];
-                        positions[i] = pose.pose().transformPosition(vertex.pos.x(), vertex.pos.y(), vertex.pos.z(), new Vector3f());
+                        // Vertex.pos is in model units; Cube.compile divides by 16 before the
+                        // transform (the record's worldX/worldY/worldZ on 1.21.11+ do it instead).
+                        positions[i] = pose.pose().transformPosition(vertex.pos.x() / 16.0F, vertex.pos.y() / 16.0F, vertex.pos.z() / 16.0F, new Vector3f());
                         u[i] = vertex.u;
                         v[i] = vertex.v;
                     }
