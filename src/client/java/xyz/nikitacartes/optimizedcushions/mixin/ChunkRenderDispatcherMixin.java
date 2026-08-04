@@ -19,10 +19,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nikitacartes.optimizedcushions.CushionBaker;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-// 1.20.1 has no SectionCompiler; chunk meshes are built by RebuildTask.compile. After the block
-// loop, append baked cushion quads to the CUTOUT layer, beginning that layer first if no cutout
-// block already started it. RenderChunk.beginLayer is just buffer.begin(QUADS, BLOCK), inlined here
-// to avoid reaching the enclosing RenderChunk instance from this inner-class mixin.
+// 1.20.1 has no SectionCompiler; meshes are built by RebuildTask.compile. Appends cushion quads to
+// CUTOUT after the block loop, beginning that layer if no cutout block did. beginLayer is inlined as
+// buffer.begin(QUADS, BLOCK) to avoid reaching the enclosing RenderChunk from this inner-class mixin.
 @Mixin(targets = "net.minecraft.client.renderer.chunk.ChunkRenderDispatcher$RenderChunk$RebuildTask")
 public class ChunkRenderDispatcherMixin {
     @Inject(

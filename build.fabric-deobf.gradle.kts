@@ -43,9 +43,8 @@ fletchingTable {
 }
 
 dependencies {
-    // 26.x snapshots ship Mojang-deobfuscated, so no `mappings(...)` and plain `implementation`
-    // (matches EasyAuth's build.fabric-deobf.gradle.kts). Obfuscated versions (<=1.21.11) use a
-    // separate build.fabric-obf.gradle.kts with officialMojangMappings + modImplementation.
+    // 26.x snapshots ship Mojang-deobfuscated, so no `mappings(...)` and plain `implementation`.
+    // Obfuscated versions (<=1.21.11) use build.fabric-obf.gradle.kts instead.
     minecraft("com.mojang:minecraft:${property("minecraft_version")}")
     implementation("net.fabricmc:fabric-loader:${property("loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")

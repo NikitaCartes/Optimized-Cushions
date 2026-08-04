@@ -11,12 +11,10 @@ import xyz.nikitacartes.optimizedcushions.mixin.server.ServerLevelAccessor;
 
 /**
  * Ticks passenger-free cushions outside the vanilla entity tick list, skipping the per-entity
- * overhead (despawn checks, ticking-range lookups, profiler scopes) that dominates server time
- * on cushion-heavy maps. Cushions with passengers stay on the vanilla list so tickPassenger/
- * rideTick behave exactly as vanilla.
- *
- * <p>Every entity in this ticker is a Cushion-Backport cushion ({@link OptCushion}); it is typed
- * as {@link Entity} because this addon does not compile against the backport.
+ * overhead (despawn checks, ticking-range lookups, profiler scopes) that dominates server time on
+ * cushion-heavy maps. Cushions with passengers stay on the vanilla list so tickPassenger/rideTick
+ * behave exactly as vanilla. Entries are all {@link OptCushion} but typed as {@link Entity},
+ * because this addon does not compile against the backport.
  */
 public final class CushionServerTicker {
     private static final Consumer<Entity> TICK_ACTION = Entity::tick;
@@ -65,9 +63,8 @@ public final class CushionServerTicker {
         if (count == 0) {
             return;
         }
-        // Same result as vanilla's per-entity isEntityFrozen: everything here is a
-        // non-player entity without player passengers. Tick-freezing (the /tick command)
-        // only exists from 1.20.3, so there is nothing to honour before that.
+        // Same result as vanilla's per-entity isEntityFrozen: everything here is a non-player
+        // entity without player passengers. Tick-freezing only exists from 1.20.3.
         //? if >=1.20.3 {
         if (!this.level.tickRateManager().runsNormally()) {
             return;
@@ -100,9 +97,8 @@ public final class CushionServerTicker {
             /*long chunkKey = cushion.chunkPosition().toLong();*/
             if (accessor.optimizedcushions$getTicksSinceLastCheck() >= CHECK_INTERVAL
                     && !distanceManager.inEntityTickingRange(chunkKey)) {
-                // vanilla freezes the whole tick outside entity-ticking range; we
-                // instead defer the survives/fluid poll by another interval. Amortizes the
-                // ticking-range lookup to once per 100 ticks per cushion.
+                // Vanilla freezes the whole tick outside entity-ticking range; this defers the
+                // survives/fluid poll by another interval, one range lookup per 100 ticks.
                 accessor.optimizedcushions$setTicksSinceLastCheck(0);
                 continue;
             }

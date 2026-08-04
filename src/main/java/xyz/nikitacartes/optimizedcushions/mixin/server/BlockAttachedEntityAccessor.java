@@ -5,9 +5,8 @@ import net.minecraft.world.entity.decoration.BlockAttachedEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-// The 100-tick support-recheck counter. >=1.21 targets vanilla BlockAttachedEntity; <1.21 has no such
-// vanilla class, so the backport ships its own. Field is checkInterval on both — Mojang renamed it to
-// ticksSinceLastCheck at 26.3, past this backport's top version, so the name is uniform here.
+// The 100-tick support-recheck counter. >=1.21 targets vanilla BlockAttachedEntity; below that the
+// backport ships its own. Field is checkInterval on both: Mojang renamed it only at 26.3.
 //? if >=1.21 {
 @Mixin(BlockAttachedEntity.class)
 //?} else

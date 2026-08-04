@@ -67,8 +67,7 @@ public class ChunkMapMixin {
         TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
         Entity entity = ext.optimizedcushions$entity();
         // needsSync isn't listed: when set, the || chain short-circuits before this runs.
-        // syncVelocity/syncPosition are 26.3-only Entity flags; a Cushion is a static
-        // BlockAttachedEntity so they are invariantly false for it, hence safe to omit pre-26.3.
+        // syncVelocity/syncPosition are 26.3-only and always false for a static BlockAttachedEntity.
         this.optimizedcushions$currentEntityQuiescent = entity instanceof OptCushion
                 //? if >=26.3 {
                 /*&& !entity.syncVelocity

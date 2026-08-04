@@ -23,9 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nikitacartes.optimizedcushions.CushionBaker;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-// Present on 1.20.2+ (SectionRenderDispatcher era); 1.20.1 bakes via ChunkRenderDispatcherMixin.
-// The section layer is keyed by ChunkSectionLayer on 1.21.11+ and by RenderType below it, and the
-// region type is RenderSectionRegion vs RenderChunkRegion respectively.
+// 1.20.2+ only; 1.20.1 bakes via ChunkRenderDispatcherMixin. The layer key is ChunkSectionLayer on
+// 1.21.11+ and RenderType below, the region RenderSectionRegion vs RenderChunkRegion.
 @Mixin(SectionCompiler.class)
 public abstract class SectionCompilerMixin {
     // SectionCompiler's own helper for lazily starting a layer's BufferBuilder; using it keeps the
@@ -39,12 +38,9 @@ public abstract class SectionCompilerMixin {
     *///?}
 
     /**
-     * Runs after the block loop, right before the started layers are built into meshes,
-     * and appends the quads of every baked cushion in this section to the CUTOUT layer.
-     *
-     * <p>NeoForge patches {@code compile}: the vanilla 4-arg signature becomes a delegating shim and
-     * the real body (with the {@code Map.entrySet} anchor) moves to a 5-arg overload that also takes
-     * the {@code AddSectionGeometryEvent} renderer list — target that overload explicitly there.
+     * Runs after the block loop, before the started layers are built into meshes, and appends every
+     * baked cushion in this section to the CUTOUT layer. NeoForge turns the vanilla 4-arg
+     * {@code compile} into a shim and moves the real body to a 5-arg overload, targeted explicitly.
      */
     @Inject(
         //? if neoforge && >=1.21.11 {

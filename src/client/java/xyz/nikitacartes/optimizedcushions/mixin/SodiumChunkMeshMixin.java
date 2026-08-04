@@ -25,10 +25,10 @@ import xyz.nikitacartes.optimizedcushions.CushionBaker;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 /**
- * Bakes cushions into Sodium's chunk meshes at {@code runChunkMeshAppenders} (Sodium's per-section
- * appender hook), emitting each into the CUTOUT layer like {@code SectionCompilerMixin} does for the
- * vanilla path. {@code @Pseudo} + string-targets both platform hook classes: only one exists per node,
- * so it binds whichever is present and no-ops when Sodium is absent.
+ * Bakes cushions into Sodium's chunk meshes at {@code runChunkMeshAppenders}, its per-section
+ * appender hook, emitting into CUTOUT like {@code SectionCompilerMixin} does for the vanilla path.
+ * {@code @Pseudo} + string targets: only one platform hook class exists per node, and none when
+ * Sodium is absent.
  */
 @Pseudo
 @Mixin(targets = {

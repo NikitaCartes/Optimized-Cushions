@@ -43,17 +43,12 @@ import xyz.nikitacartes.optimizedcushions.mixin.ModelPartCubeAccessor;
 *///?}
 
 /**
- * Captures the Cushion-Backport cushion model geometry (with the exact PoseStack transforms
- * {@code CushionRenderer} applies) once per model bake, and emits it into chunk section buffers
- * with entity-style lighting.
+ * Captures the Cushion-Backport cushion model geometry once per model bake, then emits it into chunk
+ * section buffers with entity-style lighting. Sprites live in the {@code cushionbackport} namespace
+ * and are stitched onto the block atlas by {@code assets/minecraft/atlases/blocks.json}.
  *
- * <p>Retargeted from the vanilla 26.3 cushion: the model layer is the backport's
- * ({@code cushionbackport:cushion}) and its textures live in the {@code cushionbackport} namespace,
- * stitched onto the block atlas by {@code assets/minecraft/atlases/blocks.json}.
- *
- * <p>Version-guarded in two dimensions: the emit path (26.1+ baked-quad section pipeline vs the
- * pre-rewrite {@code BufferBuilder} vertex path) and the model-introspection API (record-style
- * ModelPart on 1.21.11+ vs the older field-based Cube/Polygon/Vertex below it).
+ * <p>Guarded on two axes: the emit path (26.1+ baked-quad pipeline vs the pre-rewrite vertex path)
+ * and the model-introspection API (record ModelPart on 1.21.11+ vs field-based Cube/Polygon/Vertex).
  */
 public final class CushionBaker {
     private record QuadTemplate(Vector3f[] positions, float[] u, float[] v, Direction face) {
@@ -65,9 +60,8 @@ public final class CushionBaker {
     // The backport registers its cushion model geometry under this layer (CushionModelLayers.CUSHION).
     private static final ModelLayerLocation CUSHION_LAYER = new ModelLayerLocation(id("cushionbackport", "cushion"), "main");
 
-    // Vanilla's diffuse light directions for the entity shader's mix-light formula per world-space
-    // face. Mirrored from com.mojang.blaze3d.platform.Lighting (private fields; their type changed
-    // Vector3f->Vector3fc at 26.2, so an accesswidener would need a per-version descriptor).
+    // Inlined from Lighting's private diffuse directions: the field type changed Vector3f->Vector3fc
+    // at 26.2, so an accesswidener would need a per-version descriptor.
     private static final Vector3fc DIFFUSE_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
     private static final Vector3fc DIFFUSE_LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
     private static final Vector3fc NETHER_DIFFUSE_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
@@ -128,9 +122,8 @@ public final class CushionBaker {
             region.getBrightness(LightLayer.SKY, cushion.lightPos())
         );
         float[] diffuse = CardinalLighting.NETHER.equals(region.cardinalLighting()) ? DIFFUSE_NETHER : DIFFUSE_DEFAULT;
-        // MaterialInfo(sprite, layer, itemRenderType, tintIndex, shade, lightEmission). shade=false:
-        // cushions carry entity-style diffuse baked into the vertex colour, so block face-shading
-        // must not be applied on top.
+        // shade=false: entity-style diffuse is already baked into the vertex colour, so block
+        // face-shading must not be applied on top.
         BakedQuad.MaterialInfo materialInfo = new BakedQuad.MaterialInfo(sprite, ChunkSectionLayer.CUTOUT, null, -1, false, 0);
         QuadInstance instance = new QuadInstance();
         instance.setLightCoords(light);
@@ -179,9 +172,9 @@ public final class CushionBaker {
     //? if >=1.21.1 {
     /**
      * Sodium path: emit into Sodium's fallback chunk {@link VertexConsumer} for the CUTOUT layer.
-     * Sodium derives the cull-facing and finds the sprite from the UVs itself, so we supply only the
-     * five required attributes (position, colour, uv, light, normal) per vertex, in quad order. The
-     * vertex-builder call shape is identical across 1.21.11..26.2; only packed-light differs by era.
+     * Sodium derives the cull-facing and sprite from the UVs itself, so only position, colour, uv,
+     * light and normal are supplied per vertex. Call shape is identical across 1.21.1..26.2; only
+     * packed light differs by era.
      */
     public static void emitFallback(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final BlockAndTintGetter region) {
         List<QuadTemplate> quads = templates(cushion.dir());

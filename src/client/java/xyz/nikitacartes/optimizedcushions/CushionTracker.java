@@ -15,14 +15,11 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 
 /**
- * Client-side index of Cushion-Backport cushions, grouped by the chunk section that owns them
- * (the section of {@code blockPosition()}). Event-driven: load/unload events and the
- * setPos/onSyncedDataUpdated mixin hooks feed a dirty queue drained at end of tick.
- * Mutated only on the client main thread; read from section meshing worker threads
- * via the concurrent {@link #BY_SECTION} map holding immutable snapshots.
- *
- * <p>Cushions are typed as {@link Entity} (marked {@link OptCushion}); the backport-specific colour
- * is read through the {@link CushionExt} duck rather than a compile dependency.
+ * Client-side index of Cushion-Backport cushions, grouped by the chunk section of
+ * {@code blockPosition()}. Load/unload events and the setPos/onSyncedDataUpdated hooks feed a dirty
+ * queue drained at end of tick. Mutated on the client main thread only; read from section meshing
+ * threads through {@link #BY_SECTION}, which holds immutable snapshots. Cushions are typed as
+ * {@link Entity} and their colour read through the {@link CushionExt} duck: no compile dependency.
  */
 public final class CushionTracker {
     /** Immutable per-cushion state used for baking. */

@@ -5,9 +5,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-// On 1.21.1/1.21.11 the Sodium mesh-appender hook (runChunkMeshAppenders) omits the built section's
-// origin, so SodiumChunkMeshMixin recovers it from the LevelSlice's private slice-origin fields.
-// @Pseudo + string target: Sodium may be absent at runtime, then this is skipped.
+// On 1.21.1/1.21.11 runChunkMeshAppenders omits the built section's origin, so SodiumChunkMeshMixin
+// recovers it from these private LevelSlice fields. @Pseudo: Sodium may be absent at runtime.
 @Pseudo
 @Mixin(targets = "net.caffeinemc.mods.sodium.client.world.LevelSlice", remap = false)
 public interface LevelSliceOriginAccessor {

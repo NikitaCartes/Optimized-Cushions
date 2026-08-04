@@ -14,14 +14,9 @@ plugins {
     id("dev.kikugie.stonecutter") version "0.9.4"
 }
 
-// Target matrix (matches leclowndu93150's Cushion-Backport, the mod this optimises):
-//   Fabric  : 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11, 26.1.2, 26.2
-//   NeoForge: 1.21.1, 1.21.11, 26.1.2, 26.2
-//   Forge   : 1.18.2, 1.19.2, 1.20.1
 // Node name = "<mc>-<loader>"; the loader suffix drives the fabric/neoforge/forge constants.
-//
-// Only nodes whose build script and source guards are in place are registered below; the rest are
-// added as each loader/era is ported — see ROADMAP.md.
+// Only nodes whose build script and source guards are in place are registered below. The full target
+// matrix and what is left to port are in ROADMAP.md.
 stonecutter {
     create(rootProject) {
         // Deobfuscated Fabric (26.x snapshots ship Mojang-native jars); 26.2 is the reference node.

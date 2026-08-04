@@ -7,9 +7,8 @@ import xyz.nikitacartes.optimizedcushions.server.ServerPlayerExt;
 
 @Mixin(ServerPlayer.class)
 public class ServerPlayerMixin implements ServerPlayerExt {
-    // 1 block of horizontal movement against a >=32 block spawn/despawn radius; the
-    // 20-tick cap matches the idle movement-packet interval, so newly sent chunks get
-    // their cushions evaluated within a second even for a stationary player.
+    // 1 block of horizontal movement against a >=32 block spawn/despawn radius. The 20-tick cap
+    // matches the idle movement-packet interval, so a stationary player re-evaluates within a second.
     @Unique
     private static final double RE_EVAL_DIST_SQ = 1.0;
 

@@ -24,11 +24,9 @@ loom {
             sourceSet(sourceSets["client"])
         }
     }
-    // Our mixins target the Cushion-Backport classes by name and inject Minecraft methods they *override*
-    // (render / extractRenderState / submit). tiny-remapper only rewrites names it resolves directly on the
-    // target, so it leaves those overrides named — fine in the named dev env, broken against obfuscated
-    // production. The legacy Mixin AP walks the class hierarchy and emits a refmap with the intermediary
-    // names, which Mixin applies at runtime. (Deobf 26.x is Mojang-native at runtime, so it needs none.)
+    // tiny-remapper only rewrites names it resolves directly on the mixin target, so the inherited
+    // Minecraft methods our mixins inject stay named and fail against obfuscated production. The
+    // legacy Mixin AP walks the hierarchy instead and emits an intermediary refmap. Deobf 26.x needs none.
     mixin {
         useLegacyMixinAp.set(true)
         defaultRefmapName.set("optimizedcushions.refmap.json")
@@ -58,11 +56,9 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${property("loader_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
 
-    // The mod we optimise (+ Sodium when -Pwith_sodium=true). Not shipped, but cushions-backport must be
-    // on the *compile* classpath, not just runtime: our mixins target its Cushion/CushionRenderer by name
-    // and inject inherited Minecraft methods (setPos, extractRenderState…). On obfuscated nodes Loom only
-    // rewrites those annotation names to intermediary if it can resolve the target class — modRuntimeOnly
-    // leaves it off the remap classpath, so the names stay named and every apply fails in production.
+    // The mod we optimise (+ Sodium when -Pwith_sodium=true). Not shipped, but cushions-backport must
+    // be on the compile classpath: Loom only remaps our mixin annotations if it can resolve the target
+    // class, and modRuntimeOnly leaves it off the remap classpath.
     modImplementation(fletchingTable.modrinth("cushions-backport", property("minecraft_version") as String, "fabric"))
     if (findProperty("with_sodium") == "true") {
         modRuntimeOnly(fletchingTable.modrinth("sodium", property("minecraft_version") as String, "fabric"))
@@ -70,7 +66,6 @@ dependencies {
 }
 
 // Bytecode target = the node's MC Java floor: 1.20.5+ runs Java 21, older runs 17.
-// (26.x nodes use build.fabric-deobf.gradle.kts, which is Java 25 across the board.)
 // No toolchain: every node compiles on the build JDK and only `--release` differs, so dev runs fork
 // that JDK too — loader 0.19.3 runs 1.20.1 on Java 25 fine.
 val javaVersion = if (stonecutter.eval(stonecutter.current.version, ">=1.20.5")) 21 else 17

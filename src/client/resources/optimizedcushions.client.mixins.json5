@@ -2,9 +2,8 @@
     "required": true,
     "package": "xyz.nikitacartes.optimizedcushions.mixin",
     //? if fabric && <26.1 {
-    // Obfuscated Fabric runs intermediary at runtime; the legacy Mixin AP emits a refmap (named ->
-    // intermediary) whose name is pinned in build.fabric-obf.gradle.kts. Loom does not add the key to
-    // hand-listed configs. NeoForge and 26.x deobf are Mojang-mapped at runtime, so they need no refmap.
+    // Obfuscated Fabric runs intermediary; the legacy Mixin AP emits this refmap, named in
+    // build.fabric-obf.gradle.kts. Loom does not add the key to hand-listed configs.
     "refmap": "client-optimizedcushions.refmap.json",
     //?}
     //? if >=26.1 {

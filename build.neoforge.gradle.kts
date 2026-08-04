@@ -58,9 +58,8 @@ fletchingTable {
 }
 
 dependencies {
-    // Dev-runtime test mods (not shipped) via raw Modrinth coords (version IDs in stonecutter.properties.toml).
-    // fletchingTable.modrinth() can't be used here: its LookupBuildService clashes with the Fabric plugin
-    // variant across the multiloader build. MDG folds runtimeOnly mods into the dev run classpath.
+    // Dev-runtime test mods (not shipped); version IDs live in stonecutter.properties.toml.
+    // fletchingTable.modrinth() clashes with the Fabric plugin variant across the multiloader build.
     runtimeOnly("maven.modrinth:cushions-backport:${property("cushionbackport_version_id")}")
     if (findProperty("with_sodium") == "true") {
         runtimeOnly("maven.modrinth:sodium:${property("sodium_version_id")}")
