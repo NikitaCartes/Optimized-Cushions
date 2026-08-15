@@ -21,7 +21,7 @@ public class CushionClientGameTest implements FabricClientGameTest {
         try (TestSingleplayerContext singleplayer = context.worldBuilder()
                 .adjustSettings(creator -> creator.setGameMode(WorldCreationUiState.SelectedGameMode.CREATIVE))
                 .create()) {
-            singleplayer.getClientLevel().waitForChunksRender();
+            singleplayer.getConnection().waitForChunksRender();
 
             BlockPos support = context.computeOnClient(client -> BlockPos.containing(client.player.position()).above(3).north(3));
             singleplayer.getServer().runCommand("setblock %d %d %d minecraft:stone".formatted(support.getX(), support.getY(), support.getZ()));
