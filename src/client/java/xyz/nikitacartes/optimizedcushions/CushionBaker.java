@@ -116,8 +116,8 @@ public final class CushionBaker {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             List<QuadTemplate> quads = new ArrayList<>();
             PoseStack poseStack = new PoseStack();
-            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - direction.toYRot()));
-            poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+            poseStack.rotateDegrees(Axis.YP, 180.0F - direction.toYRot());
+            poseStack.rotateDegrees(Axis.XP, 180.0F);
             poseStack.translate(0.0F, -0.25F, 0.0F);
             root.visit(poseStack, (pose, path, cubeIndex, cube) -> {
                 for (ModelPart.Polygon polygon : cube.polygons) {
