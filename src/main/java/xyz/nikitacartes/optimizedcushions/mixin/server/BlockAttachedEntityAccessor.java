@@ -11,4 +11,9 @@ public interface BlockAttachedEntityAccessor {
 
     @Accessor("ticksSinceLastCheck")
     void optimizedcushions$setTicksSinceLastCheck(int ticks);
+
+    @Accessor("CHECK_INTERVAL")
+    static int optimizedcushions$getCheckInterval() {
+        throw new AssertionError();
+    }
 }

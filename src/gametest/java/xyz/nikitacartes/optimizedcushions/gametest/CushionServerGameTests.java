@@ -37,7 +37,7 @@ public class CushionServerGameTests {
         });
     }
 
-    /** Sitting on a cushion promotes it to the vanilla list; getting up demotes it back. */
+    /** Sitting on a cushion promotes it to the vanilla list; getting up demotes it back (via deferred queue, 1 tick). */
     @GameTest
     public void ridePromotesAndDismountDemotes(GameTestHelper helper) {
         floor(helper);
@@ -51,6 +51,9 @@ public class CushionServerGameTests {
             helper.assertFalse(inTicker(cushion), "ridden cushion must move to the vanilla tick list");
 
             pig.stopRiding();
+            // Demotion is deferred to next tick via pending queue (OC-02), so check after 1 tick
+        });
+        helper.runAfterDelay(4, () -> {
             helper.assertTrue(inTicker(cushion), "idle cushion must be reclaimed by the ticker");
             helper.succeed();
         });

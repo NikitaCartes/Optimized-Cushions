@@ -12,7 +12,7 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 @Mixin(Cushion.class)
 public class CushionMixin implements CushionExt {
     @Unique
-    private boolean optimizedcushions$baked;
+    private volatile boolean optimizedcushions$baked;
 
     @Override
     public boolean optimizedcushions$isBaked() {
@@ -28,6 +28,22 @@ public class CushionMixin implements CushionExt {
     // Rotation-only teleports are covered too, moveTo always calls setPos.
     @Inject(method = "setPos(DDD)V", at = @At("TAIL"))
     private void optimizedcushions$onSetPos(final double x, final double y, final double z, final CallbackInfo ci) {
+        Cushion self = (Cushion)(Object)this;
+        if (self.level() != null && self.level().isClientSide()) {
+            CushionTracker.markChanged(self);
+        }
+    }
+
+    @Inject(method = "setYRot(F)V", at = @At("TAIL"))
+    private void optimizedcushions$onSetYRot(final float yRot, final CallbackInfo ci) {
+        Cushion self = (Cushion)(Object)this;
+        if (self.level() != null && self.level().isClientSide()) {
+            CushionTracker.markChanged(self);
+        }
+    }
+
+    @Inject(method = "setRot(FF)V", at = @At("TAIL"))
+    private void optimizedcushions$onSetRot(final float yRot, final float xRot, final CallbackInfo ci) {
         Cushion self = (Cushion)(Object)this;
         if (self.level() != null && self.level().isClientSide()) {
             CushionTracker.markChanged(self);

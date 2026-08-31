@@ -7,11 +7,17 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
+    maven {
+        name = "LlamaLad7"
+        url = uri("https://maven.llamalad7.com/releases")
+    }
+    maven {
+        name = "LlamaLad7Snapshots"
+        url = uri("https://maven.llamalad7.com/snapshots")
+    }
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/optimizedcushions.accesswidener")
-
     splitEnvironmentSourceSets()
 
     mods {
@@ -37,6 +43,9 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    // Explicit MixinExtras for WrapOperation/@Local (OC-27). Fabric API currently re-exports it,
+    // but that is not a guaranteed API; pin the version we compile against (io.github.llamalad7).
+    implementation "io.github.llamalad7:mixinextras-fabric:0.5.0"
 }
 
 processResources {
@@ -66,4 +75,29 @@ jar {
     from("LICENSE") {
         rename { "${it}_$projectName"}
     }
+}
+
+// OC-37/OC-44: Single-version build (no stonecutter aggregation). The external
+// build_all script expects a `collectJars` task on every project; stonecutter
+// projects provide it per-version via Copy into root build/libs. For this
+// single-version layout the jar already lives in build/libs, so this is a
+// lifecycle alias that ensures the build succeeded and logs the collected jars.
+tasks.register("collectJars") {
+    group = "build"
+    description = "Collects built jars into build/libs (single-version alias for build)"
+    dependsOn("build")
+    doLast {
+        def libsDir = layout.buildDirectory.dir("libs").get().asFile
+        if (!libsDir.isDirectory()) {
+            throw new GradleException("Expected libs dir not found: ${libsDir}")
+        }
+        def jars = libsDir.listFiles()?.findAll { it.name.endsWith(".jar") }?.collect { it.name } ?: []
+        logger.lifecycle("collectJars: ${jars.size()} jar(s) in ${libsDir}: ${jars}")
+    }
+}
+
+tasks.register("cleanCollectedJars", Delete) {
+    group = "build"
+    description = "Cleans collected jars (single-version no-op, deletes build/libs)"
+    delete(layout.buildDirectory.dir("libs"))
 }

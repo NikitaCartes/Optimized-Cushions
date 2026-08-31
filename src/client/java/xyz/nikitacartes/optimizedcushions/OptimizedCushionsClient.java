@@ -11,10 +11,15 @@ import org.slf4j.LoggerFactory;
 public class OptimizedCushionsClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushions");
 
+    private static boolean isSodiumLikeLoaded() {
+        var loader = FabricLoader.getInstance();
+        return loader.isModLoaded("sodium") || loader.isModLoaded("rubidium") || loader.isModLoaded("embeddium") || loader.isModLoaded("sodium-extra");
+    }
+
     @Override
     public void onInitializeClient() {
-        if (FabricLoader.getInstance().isModLoaded("sodium")) {
-            LOGGER.warn("Sodium detected - Optimized Cushions is disabled, cushions render as vanilla entities.");
+        if (isSodiumLikeLoaded()) {
+            LOGGER.warn("Sodium/Rubidium/Embeddium detected - Optimized Cushions is disabled, cushions render as vanilla entities.");
             return;
         }
 
