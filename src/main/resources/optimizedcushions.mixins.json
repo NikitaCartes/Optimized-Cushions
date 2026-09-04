@@ -3,13 +3,10 @@
     "package": "xyz.nikitacartes.optimizedcushions.mixin.server",
     "compatibilityLevel": "JAVA_25",
     "mixins": [
-        "BlockAttachedEntityAccessor",
         "ChunkMapMixin",
         "CushionMixin",
-        "EntityAccessor",
         "EntityCallbacksMixin",
         "EntityMixin",
-        "PersistentEntitySectionManagerAccessor",
         "ServerEntityAccessor",
         "ServerLevelAccessor",
         "ServerLevelMixin",

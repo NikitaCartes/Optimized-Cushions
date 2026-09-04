@@ -1,5 +1,6 @@
 package xyz.nikitacartes.optimizedcushions;
 
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -40,21 +41,12 @@ public final class CushionBaker {
     private record QuadTemplate(Vector3f[] positions, float[] u, float[] v, Direction face) {
     }
 
-    private record CaptureSet(EntityModelSet source, ModelPart root, Map<Direction, List<QuadTemplate>> byDirection) {
+    private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
     }
 
-    // Inlined from com.mojang.blaze3d.platform.Lighting to avoid server-side access-widener on client-only class (OC-31).
-    private static final Vector3fc LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
-    private static final Vector3fc LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
-    private static final Vector3fc NETHER_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
-    private static final Vector3fc NETHER_LIGHT_1 = new Vector3f(-0.2F, -1.0F, 0.7F).normalize();
-    private static final float[] DIFFUSE_DEFAULT = diffuseByFace(LIGHT_0, LIGHT_1);
-    private static final float[] DIFFUSE_NETHER = diffuseByFace(NETHER_LIGHT_0, NETHER_LIGHT_1);
-    // OC-35: End currently shares OVERWORLD diffuse on 26.3. Keep a separate alias so a future
-    // Mojang split to an End-specific diffuse only requires changing this constant, not the
-    // branch shape. CardinalLighting.NETHER is the only distinct value today (DEFAULT covers
-    // Overworld + End).
-    private static final float[] DIFFUSE_END = DIFFUSE_DEFAULT;
+    // Vanilla's diffuse light directions entity shader's mix-light formula per world-space face.
+    private static final float[] DIFFUSE_DEFAULT = diffuseByFace(Lighting.DIFFUSE_LIGHT_0, Lighting.DIFFUSE_LIGHT_1);
+    private static final float[] DIFFUSE_NETHER = diffuseByFace(Lighting.NETHER_DIFFUSE_LIGHT_0, Lighting.NETHER_DIFFUSE_LIGHT_1);
     private static final EnumMap<DyeColor, Identifier> SPRITE_IDS = Util.make(new EnumMap<>(DyeColor.class), sprites -> {
         for (DyeColor color : DyeColor.values()) {
             sprites.put(color, Identifier.withDefaultNamespace("entity/cushion/" + color.getName() + "_cushion"));
@@ -66,53 +58,15 @@ public final class CushionBaker {
     private CushionBaker() {
     }
 
-    public static void invalidate() {
-        synchronized (CushionBaker.class) {
-            captured = null;
-        }
-    }
-
-    /** Called on section meshing worker threads. OC-09: AtlasManager is render-thread-raced with reload; guard with try/catch. */
+    /** Called on section meshing worker threads. */
     public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final RenderSectionRegion region) {
-        // OC-09: worker thread may race with atlas reload; fail safe.
-        Minecraft mc = Minecraft.getInstance();
-        if (mc == null) {
-            return;
-        }
-        List<QuadTemplate> quads;
-        try {
-            quads = templates(cushion.dir());
-        } catch (Exception e) {
-            return;
-        }
-        TextureAtlasSprite sprite;
-        try {
-            var atlasManager = mc.getAtlasManager();
-            if (atlasManager == null) {
-                return;
-            }
-            sprite = atlasManager.getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SPRITE_IDS.get(cushion.color()));
-        } catch (Exception e) {
-            return;
-        }
+        List<QuadTemplate> quads = templates(cushion.dir());
+        TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SPRITE_IDS.get(cushion.color()));
         int light = LightCoordsUtil.pack(
             region.getBrightness(LightLayer.BLOCK, cushion.lightPos()),
             region.getBrightness(LightLayer.SKY, cushion.lightPos())
         );
-        // OC-35: Explicit 3-way for forward-compat. NETHER uses NETHER diffuse, END and
-        // OVERWORLD use DEFAULT/END (identical today). If Mojang gives End its own diffuse,
-        // replace DIFFUSE_END above and this branch already isolates the change.
-        CardinalLighting lighting = region.cardinalLighting();
-        float[] diffuse;
-        if (CardinalLighting.NETHER.equals(lighting)) {
-            diffuse = DIFFUSE_NETHER;
-        } else if (lighting == CardinalLighting.DEFAULT) {
-            // Covers OVERWORLD today; if Mojang adds CardinalLighting.END, add a branch here
-            // and set DIFFUSE_END to the End-specific value.
-            diffuse = DIFFUSE_DEFAULT;
-        } else {
-            diffuse = DIFFUSE_END;
-        }
+        float[] diffuse = CardinalLighting.NETHER.equals(region.cardinalLighting()) ? DIFFUSE_NETHER : DIFFUSE_DEFAULT;
         float offsetX = (float)(cushion.x() - sectionPos.minBlockX());
         float offsetY = (float)(cushion.y() - sectionPos.minBlockY());
         float offsetZ = (float)(cushion.z() - sectionPos.minBlockZ());
@@ -139,46 +93,14 @@ public final class CushionBaker {
     }
 
     private static List<QuadTemplate> templates(final Direction direction) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc == null) {
-            // Fallback: return last captured quads or empty if none yet; caller catches.
-            CaptureSet last = captured;
-            if (last != null) {
-                return last.byDirection().get(direction);
-            }
-            throw new IllegalStateException("Minecraft.getInstance() is null");
-        }
-        EntityModelSet models = mc.getEntityModels();
+        EntityModelSet models = Minecraft.getInstance().getEntityModels();
         CaptureSet set = captured;
-        ModelPart currentRoot = null;
-        boolean needsRefresh = false;
         if (set == null || set.source() != models) {
-            needsRefresh = true;
-        } else {
-            // Same EntityModelSet instance may be reused across pack reloads with rebuilt bake layers.
-            try {
-                currentRoot = models.bakeLayer(ModelLayers.CUSHION);
-                if (currentRoot != set.root()) {
-                    needsRefresh = true;
-                }
-            } catch (Exception e) {
-                needsRefresh = true;
-            }
-        }
-        if (needsRefresh) {
             synchronized (CushionBaker.class) {
                 set = captured;
                 if (set == null || set.source() != models) {
-                    ModelPart root = models.bakeLayer(ModelLayers.CUSHION);
-                    set = new CaptureSet(models, root, capture(root));
+                    set = new CaptureSet(models, capture(models));
                     captured = set;
-                } else {
-                    // Double-check root identity inside lock
-                    ModelPart freshRoot = models.bakeLayer(ModelLayers.CUSHION);
-                    if (freshRoot != set.root()) {
-                        set = new CaptureSet(models, freshRoot, capture(freshRoot));
-                        captured = set;
-                    }
                 }
             }
         }
@@ -187,7 +109,8 @@ public final class CushionBaker {
     }
 
     /** Replays the transforms of CushionRenderer.submit for each horizontal facing. */
-    private static Map<Direction, List<QuadTemplate>> capture(final ModelPart root) {
+    private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models) {
+        ModelPart root = models.bakeLayer(ModelLayers.CUSHION);
         Map<Direction, List<QuadTemplate>> byDirection = new EnumMap<>(Direction.class);
 
         for (Direction direction : Direction.Plane.HORIZONTAL) {
@@ -222,10 +145,6 @@ public final class CushionBaker {
         }
 
         return byDirection;
-    }
-
-    private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models) {
-        return capture(models.bakeLayer(ModelLayers.CUSHION));
     }
 
     /** Entity shader diffuse: min(1, 0.4 + 0.6 * (max(0, L0·N) + max(0, L1·N))) per axis face. */

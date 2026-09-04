@@ -1,5 +1,5 @@
 {
-    "required": false,
+    "required": true,
     "package": "xyz.nikitacartes.optimizedcushions.mixin",
     "compatibilityLevel": "JAVA_25",
     "client": [

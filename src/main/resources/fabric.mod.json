@@ -16,6 +16,7 @@
     "license": "MIT",
     "icon": "assets/optimizedcushions/icon.png",
     "environment": "*",
+    "accessWidener": "optimizedcushions.accesswidener",
     "entrypoints": {
         "client": [
             "xyz.nikitacartes.optimizedcushions.OptimizedCushionsClient"

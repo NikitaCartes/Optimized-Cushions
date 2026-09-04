@@ -11,11 +11,3 @@ pluginManagement {
 
 // Should match your modid
 rootProject.name = 'optimizedcushions'
-// OC-37/OC-44: Stonecutter is detached on master (single-version build). The repo keeps a
-// `versions/` tree with 14 legacy branches and a `build/stonecutter-cache/branch.json`
-// pinned to 26.2-fabric for the stonecutter branch, but `settings.gradle` has no
-// `dev.kikugie.stonecutter` plugin and `gradle.properties` is 26.3-snapshot-10.
-// Do not run `stonecutterGenerate` from master — it would overwrite src/ with 26.2
-// processed sources and discard the snapshot bump (e.g. PoseStack.rotateDegrees fix).
-// To edit cross-version code use the `backport-stonecutter` branch which has
-// `stonecutter.gradle.kts` and the Sodium mesh hook; master intentionally stays single-version.

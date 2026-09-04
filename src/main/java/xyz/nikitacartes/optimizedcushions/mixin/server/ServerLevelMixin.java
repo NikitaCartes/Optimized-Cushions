@@ -27,11 +27,6 @@ public class ServerLevelMixin implements ServerLevelExt {
 
     // Runs our cushions in the same phase as the vanilla entity tick loop. Sits inside
     // the emptyTime < 300 branch, so an empty server pauses cushions exactly like vanilla.
-    // OC-25: Shift.AFTER forEach is fragile if Mojang moves block-entity ticking. Hardening:
-    // ticker.tick() also checks emptyTime >=300 and isEntityFrozen (OC-14) and
-    // runsNormally globally, so even if this injection drifts outside the branch, cushions
-    // still respect freeze semantics. A TAIL fallback would be more stable but would need
-    // to duplicate the emptyTime guard anyway; dual guard is the minimal surgical fix.
     @Inject(
             method = "tick(Ljava/util/function/BooleanSupplier;)V",
             at = @At(

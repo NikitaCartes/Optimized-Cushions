@@ -42,13 +42,8 @@ public abstract class CushionRendererMixin extends EntityRenderer<Cushion, Cushi
         final CallbackInfo ci
     ) {
         if (((CushionRenderStateExt)state).optimizedcushions$isBaked()) {
-            // OC-13: The cushion is part of the chunk mesh; keep only what super.submit would do
-            // (cushions are not Leashable, so that is just the name display). Named cushions
-            // therefore pay one extra CushionRenderState + extractRenderState per frame but still
-            // save the full model draw; hasCustomName culling is in LevelExtractorMixin.
-            // OC-28: Leash/shadow omission is intentional — cushions are not leashable and
-            // chunk geometry has no entity shadow. If vanilla moves shadow into submit, baked
-            // cushions will correctly have no shadow (blocks do not).
+            // The cushion is part of the chunk mesh; keep only what super.submit would do
+            // (cushions are not Leashable, so that is just the name display).
             this.submitNameDisplay(state, poseStack, submitNodeCollector, camera);
             ci.cancel();
         }

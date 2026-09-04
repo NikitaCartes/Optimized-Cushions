@@ -1,0 +1,6 @@
+accessWidener	v2	official
+
+accessible	field	com/mojang/blaze3d/platform/Lighting	DIFFUSE_LIGHT_0	Lorg/joml/Vector3fc;
+accessible	field	com/mojang/blaze3d/platform/Lighting	DIFFUSE_LIGHT_1	Lorg/joml/Vector3fc;
+accessible	field	com/mojang/blaze3d/platform/Lighting	NETHER_DIFFUSE_LIGHT_0	Lorg/joml/Vector3fc;
+accessible	field	com/mojang/blaze3d/platform/Lighting	NETHER_DIFFUSE_LIGHT_1	Lorg/joml/Vector3fc;
