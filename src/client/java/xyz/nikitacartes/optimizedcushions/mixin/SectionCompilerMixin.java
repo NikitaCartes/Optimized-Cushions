@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nikitacartes.optimizedcushions.CushionBaker;
+import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 @Mixin(SectionCompiler.class)
@@ -48,5 +49,7 @@ public class SectionCompilerMixin {
         for (CushionTracker.Snapshot cushion : cushions.values()) {
             CushionBaker.emit(builder, cushion, sectionPos, region);
         }
+
+        CushionSectionTasks.addTask(sectionPos.asLong(), () -> CushionTracker.commitBakedSection(sectionPos.asLong()));
     }
 }

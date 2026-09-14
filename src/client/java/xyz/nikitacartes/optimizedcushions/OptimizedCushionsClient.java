@@ -13,6 +13,11 @@ public class OptimizedCushionsClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        if (FabricLoader.getInstance().isModLoaded("obe")) {
+            LOGGER.warn("Optimised Block Entities detected - Optimized Cushions client is disabled, cushions render as vanilla entities.");
+            return;
+        }
+
         if (FabricLoader.getInstance().isModLoaded("sodium")) {
             LOGGER.warn("Sodium detected - Optimized Cushions is disabled, cushions render as vanilla entities.");
             return;

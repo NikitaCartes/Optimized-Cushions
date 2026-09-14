@@ -8,6 +8,7 @@
         "CushionRenderStateMixin",
         "EntityMixin",
         "LevelExtractorMixin",
+        "RenderSectionMixin",
         "SectionCompilerMixin"
     ],
     "injectors": {

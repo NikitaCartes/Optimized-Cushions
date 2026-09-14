@@ -12,7 +12,7 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 @Mixin(Cushion.class)
 public class CushionMixin implements CushionExt {
     @Unique
-    private boolean optimizedcushions$baked;
+    private volatile boolean optimizedcushions$baked;
 
     @Override
     public boolean optimizedcushions$isBaked() {

@@ -28,13 +28,14 @@ On the server, cushions that have nobody sitting on them skip the entity tracker
 
 - **Vanilla-safe** — no protocol or save changes. The client half works on vanilla servers, and the server half serves vanilla clients.
 - **Sodium** — Client side are automatically disabled when Sodium is installed (will investigate it in the future with Sodium updates). The **server** optimizations still work.
+- **Optimised Block Entities** — Client side are automatically disabled when OBE is installed. The **server** optimizations still work.
 - Cushions fall back to the vanilla renderer while glowing, on fire, or invisible, and name tags / F3+B hitboxes always render the vanilla way.
 
 ## Trade-offs
 
 A few small, deliberate differences from vanilla — none affect gameplay (drops, riding, sounds, damage and saves are identical):
 
-- **Client** — because cushions are baked into terrain, a change (place, break, teleport, dye) shows up on the next section rebuild, so it can flicker for a frame or two instead of updating instantly. Textures now mipmap at distance like blocks.
+- **Client** — because cushions are baked into terrain, a change (place, break, teleport, dye) shows up on the next section rebuild rather than instantly. Textures now mipmap at distance like blocks.
 - **Server** — spawn/despawn for a moving player is checked on a ~1-block / 1-second grid instead of every packet, so a cushion at the far tracking edge can appear up to one block of walking later than vanilla. Support/fluid checks in unloaded-but-not-ticking chunks are deferred rather than frozen.
 
 ## Links
