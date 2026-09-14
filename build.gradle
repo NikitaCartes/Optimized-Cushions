@@ -67,3 +67,21 @@ jar {
         rename { "${it}_$projectName"}
     }
 }
+
+tasks.register("collectJars") {
+    group = "build"
+    dependsOn("build")
+    doLast {
+        def libsDir = layout.buildDirectory.dir("libs").get().asFile
+        if (!libsDir.isDirectory()) {
+            throw new GradleException("Expected libs dir not found: ${libsDir}")
+        }
+        def jars = libsDir.listFiles()?.findAll { it.name.endsWith(".jar") }?.collect { it.name } ?: []
+        logger.lifecycle("collectJars: ${jars.size()} jar(s) in ${libsDir}: ${jars}")
+    }
+}
+
+tasks.register("cleanCollectedJars", Delete) {
+    group = "build"
+    delete(layout.buildDirectory.dir("libs"))
+}
