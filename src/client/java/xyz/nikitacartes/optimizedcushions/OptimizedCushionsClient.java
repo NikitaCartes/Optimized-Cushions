@@ -11,17 +11,23 @@ import org.slf4j.LoggerFactory;
 public class OptimizedCushionsClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushions");
 
-    private static boolean isSodiumLikeLoaded() {
-        var loader = FabricLoader.getInstance();
-        return loader.isModLoaded("sodium")
-                || loader.isModLoaded("obe");
+    public static boolean isObeLoaded() {
+        return FabricLoader.getInstance().isModLoaded("obe");
+    }
+
+    private static boolean isSodiumLoaded() {
+        return FabricLoader.getInstance().isModLoaded("sodium");
     }
 
     @Override
     public void onInitializeClient() {
-        if (isSodiumLikeLoaded()) {
-            LOGGER.info("Another optimization mod detected - Optimized Cushions client is disabled, cushions render as vanilla entities.");
+        if (isObeLoaded()) {
+            LOGGER.info("Optimised Block Entities detected - Optimized Cushions client is disabled, cushions render as vanilla entities.");
             return;
+        }
+
+        if (isSodiumLoaded()) {
+            LOGGER.info("Sodium detected - baking cushions into Sodium chunk meshes.");
         }
 
         ClientEntityEvents.ENTITY_LOAD.register((entity, level) -> {

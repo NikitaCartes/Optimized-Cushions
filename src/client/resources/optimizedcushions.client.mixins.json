@@ -9,8 +9,10 @@
         "CushionRenderStateMixin",
         "EntityMixin",
         "LevelExtractorMixin",
+        "LevelRendererMixin",
         "RenderSectionMixin",
-        "SectionCompilerMixin"
+        "SectionCompilerMixin",
+        "SodiumChunkMeshMixin"
     ],
     "injectors": {
         "defaultRequire": 1

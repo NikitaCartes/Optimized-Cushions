@@ -27,7 +27,7 @@ On the server, cushions that have nobody sitting on them skip the entity tracker
 ## Compatibility
 
 - **Vanilla-safe** — no protocol or save changes. The client half works on vanilla servers, and the server half serves vanilla clients.
-- **Sodium** — Client side are automatically disabled when Sodium is installed (will investigate it in the future with Sodium updates). The **server** optimizations still work.
+- **Sodium** — supported: cushions are baked into Sodium chunk meshes just like on vanilla. The **server** optimizations work with or without it.
 - **Optimised Block Entities** — Client side are automatically disabled when OBE is installed. The **server** optimizations still work.
 - Cushions fall back to the vanilla renderer while glowing, on fire, or invisible, and name tags / F3+B hitboxes always render the vanilla way.
 

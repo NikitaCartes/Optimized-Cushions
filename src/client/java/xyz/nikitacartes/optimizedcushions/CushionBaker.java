@@ -13,8 +13,8 @@ import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.builders.UVPair;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.chunk.RenderSectionRegion;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.Direction;
@@ -62,8 +62,8 @@ public final class CushionBaker {
     private CushionBaker() {
     }
 
-    /** Called on section meshing worker threads. */
-    public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final RenderSectionRegion region) {
+    /** Called on section meshing worker threads (vanilla and Sodium alike: both regions expose block/sky brightness and cardinal lighting). */
+    public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final BlockAndTintGetter region) {
         // Worker threads can race atlas reload / init / disconnect: isolate per cushion
         // so one bad lookup never aborts the whole section.
         Minecraft mc = Minecraft.getInstance();
