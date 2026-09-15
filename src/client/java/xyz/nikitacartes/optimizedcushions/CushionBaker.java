@@ -1,6 +1,5 @@
 package xyz.nikitacartes.optimizedcushions;
 
-import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -44,9 +43,14 @@ public final class CushionBaker {
     private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
     }
 
-    // Vanilla's diffuse light directions entity shader's mix-light formula per world-space face.
-    private static final float[] DIFFUSE_DEFAULT = diffuseByFace(Lighting.DIFFUSE_LIGHT_0, Lighting.DIFFUSE_LIGHT_1);
-    private static final float[] DIFFUSE_NETHER = diffuseByFace(Lighting.NETHER_DIFFUSE_LIGHT_0, Lighting.NETHER_DIFFUSE_LIGHT_1);
+    // Inlined from com.mojang.blaze3d.platform.Lighting: that class is client-only,
+    // so no access widener is needed and a Mojang descriptor change cannot break boot.
+    private static final Vector3fc LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
+    private static final Vector3fc LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
+    private static final Vector3fc NETHER_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
+    private static final Vector3fc NETHER_LIGHT_1 = new Vector3f(-0.2F, -1.0F, 0.7F).normalize();
+    private static final float[] DIFFUSE_DEFAULT = diffuseByFace(LIGHT_0, LIGHT_1);
+    private static final float[] DIFFUSE_NETHER = diffuseByFace(NETHER_LIGHT_0, NETHER_LIGHT_1);
     private static final EnumMap<DyeColor, Identifier> SPRITE_IDS = Util.make(new EnumMap<>(DyeColor.class), sprites -> {
         for (DyeColor color : DyeColor.values()) {
             sprites.put(color, Identifier.withDefaultNamespace("entity/cushion/" + color.getName() + "_cushion"));
@@ -60,8 +64,22 @@ public final class CushionBaker {
 
     /** Called on section meshing worker threads. */
     public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final RenderSectionRegion region) {
-        List<QuadTemplate> quads = templates(cushion.dir());
-        TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SPRITE_IDS.get(cushion.color()));
+        // Worker threads can race atlas reload / init / disconnect: isolate per cushion
+        // so one bad lookup never aborts the whole section.
+        Minecraft mc = Minecraft.getInstance();
+        List<QuadTemplate> quads;
+        try {
+            quads = templates(cushion.dir());
+        } catch (Exception e) {
+            return;
+        }
+        TextureAtlasSprite sprite;
+        try {
+            var atlasManager = mc.getAtlasManager();
+            sprite = atlasManager.getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SPRITE_IDS.get(cushion.color()));
+        } catch (Exception e) {
+            return;
+        }
         int light = LightCoordsUtil.pack(
             region.getBrightness(LightLayer.BLOCK, cushion.lightPos()),
             region.getBrightness(LightLayer.SKY, cushion.lightPos())
@@ -93,7 +111,8 @@ public final class CushionBaker {
     }
 
     private static List<QuadTemplate> templates(final Direction direction) {
-        EntityModelSet models = Minecraft.getInstance().getEntityModels();
+        Minecraft mc = Minecraft.getInstance();
+        EntityModelSet models = mc.getEntityModels();
         CaptureSet set = captured;
         if (set == null || set.source() != models) {
             synchronized (CushionBaker.class) {

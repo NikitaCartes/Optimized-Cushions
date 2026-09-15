@@ -1,6 +1,7 @@
 {
     "required": true,
     "package": "xyz.nikitacartes.optimizedcushions.mixin",
+    "plugin": "xyz.nikitacartes.optimizedcushions.mixin.OptimizedCushionsMixinPlugin",
     "compatibilityLevel": "JAVA_25",
     "client": [
         "CushionMixin",

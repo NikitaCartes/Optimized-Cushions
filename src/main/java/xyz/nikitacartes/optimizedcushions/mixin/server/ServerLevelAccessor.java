@@ -9,4 +9,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface ServerLevelAccessor {
     @Accessor("entityTickList")
     EntityTickList optimizedcushions$getEntityTickList();
+
+    @Accessor("emptyTime")
+    int optimizedcushions$getEmptyTime();
 }

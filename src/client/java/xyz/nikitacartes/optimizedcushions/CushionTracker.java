@@ -1,8 +1,10 @@
 package xyz.nikitacartes.optimizedcushions;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,14 +68,17 @@ public final class CushionTracker {
             return;
         }
 
-        for (Cushion cushion : DIRTY) {
+        // Snapshot + removeAll instead of for+clear: entries added while draining
+        // are kept for the next tick, and a re-entrant markChanged cannot CME.
+        List<Cushion> pending = new ArrayList<>(DIRTY);
+        pending.forEach(DIRTY::remove);
+        for (Cushion cushion : pending) {
             if (cushion.isRemoved() || cushion.level() != minecraft.level) {
                 drop(cushion);
             } else {
                 update(cushion);
             }
         }
-        DIRTY.clear();
     }
 
     /** Whether the given cushion is currently rendered as chunk geometry instead of an entity model. */
@@ -87,7 +92,18 @@ public final class CushionTracker {
     }
 
     private static void flush(final Level level) {
+        // Survivors of a level swap keep their object identity: reset baked flags via
+        // the snapshots (which carry the cushion ref) so none stays culled with no
+        // BY_SECTION entry and no queued commit to unbake it.
+        for (Snapshot snapshot : SNAPSHOTS.values()) {
+            ((CushionExt) snapshot.cushion()).optimizedcushions$setBaked(false);
+        }
         SNAPSHOTS.clear();
+        // Clear inner maps first: a worker holding an inner reference from
+        // getForSection must not bake stale snapshots into a reused section key.
+        for (ConcurrentHashMap<Integer, Snapshot> inner : BY_SECTION.values()) {
+            inner.clear();
+        }
         BY_SECTION.clear();
         DIRTY.clear();
         CushionSectionTasks.clear();
@@ -149,7 +165,7 @@ public final class CushionTracker {
         if (section == null) {
             return;
         }
-        for (Snapshot snapshot : section.values()) {
+        for (Snapshot snapshot : new ArrayList<>(section.values())) {
             ((CushionExt)snapshot.cushion()).optimizedcushions$setBaked(true);
         }
     }
@@ -194,6 +210,13 @@ public final class CushionTracker {
     }
 
     private static void markDirty(final long sectionKey) {
-        Minecraft.getInstance().levelExtractor.setSectionDirty(SectionPos.x(sectionKey), SectionPos.y(sectionKey), SectionPos.z(sectionKey));
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        try {
+            mc.levelExtractor.setSectionDirty(SectionPos.x(sectionKey), SectionPos.y(sectionKey), SectionPos.z(sectionKey));
+        } catch (Exception ignored) {
+        }
     }
 }

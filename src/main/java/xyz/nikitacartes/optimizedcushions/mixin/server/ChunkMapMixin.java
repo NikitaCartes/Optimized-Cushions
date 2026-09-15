@@ -26,6 +26,11 @@ public class ChunkMapMixin {
     @Unique
     private boolean optimizedcushions$currentEntityQuiescent;
 
+    @Inject(method = "tick()V", at = @At("HEAD"))
+    private void optimizedcushions$resetQuiescent(final CallbackInfo ci) {
+        this.optimizedcushions$currentEntityQuiescent = false;
+    }
+
     // move(): cushions never move, so their visibility only changes when the player does;
     // vanilla re-checks every tracked entity on every move packet, even rotation-only ones.
     @Inject(method = "move(Lnet/minecraft/server/level/ServerPlayer;)V", at = @At("HEAD"))
@@ -53,6 +58,10 @@ public class ChunkMapMixin {
 
     // tick(): for a quiescent cushion sendChanges() is a guaranteed no-op, so skip it and
     // the ticking-range lookup. Anything that would make it send flips a checked flag first.
+    // The GETFIELD producer runs unconditionally every iteration and dominates the
+    // inEntityTickingRange consumer, so the flag always belongs to the current entity;
+    // when needsSync is set the || chain short-circuits past the consumer and sendChanges()
+    // runs anyway. The HEAD reset above is armor against a future vanilla reorder.
     @WrapOperation(
             method = "tick()V",
             at = @At(
@@ -64,16 +73,19 @@ public class ChunkMapMixin {
     private SectionPos optimizedcushions$classifyTrackedEntity(
             final @Coerce Object trackedEntity, final Operation<SectionPos> original
     ) {
-        TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
-        Entity entity = ext.optimizedcushions$entity();
-        // needsSync isn't listed: when set, the || chain short-circuits before this runs.
-        this.optimizedcushions$currentEntityQuiescent = entity instanceof Cushion
-                && !entity.syncVelocity
-                && !entity.syncPosition
-                && !entity.getEntityData().isDirty()
-                && entity.getPassengers().isEmpty()
-                && ((ServerEntityAccessor) ext.optimizedcushions$serverEntity())
-                        .optimizedcushions$getLastPassengers().isEmpty();
+        try {
+            TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
+            Entity entity = ext.optimizedcushions$entity();
+            this.optimizedcushions$currentEntityQuiescent = entity instanceof Cushion
+                    && !entity.syncVelocity
+                    && !entity.syncPosition
+                    && !entity.getEntityData().isDirty()
+                    && entity.getPassengers().isEmpty()
+                    && ((ServerEntityAccessor) ext.optimizedcushions$serverEntity())
+                            .optimizedcushions$getLastPassengers().isEmpty();
+        } catch (Exception e) {
+            this.optimizedcushions$currentEntityQuiescent = false;
+        }
         return original.call(trackedEntity);
     }
 
@@ -87,6 +99,10 @@ public class ChunkMapMixin {
     private boolean optimizedcushions$skipQuiescentSendChanges(
             final @Coerce Object distanceManager, final long chunkKey, final Operation<Boolean> original
     ) {
-        return !this.optimizedcushions$currentEntityQuiescent && original.call(distanceManager, chunkKey);
+        // Fail open: an unclassified entity always takes the vanilla path.
+        if (this.optimizedcushions$currentEntityQuiescent) {
+            return false;
+        }
+        return original.call(distanceManager, chunkKey);
     }
 }

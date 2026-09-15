@@ -10,8 +10,6 @@ repositories {
 }
 
 loom {
-    accessWidenerPath = file("src/main/resources/optimizedcushions.accesswidener")
-
     splitEnvironmentSourceSets()
 
     mods {

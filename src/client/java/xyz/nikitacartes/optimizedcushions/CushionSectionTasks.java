@@ -33,7 +33,10 @@ public final class CushionSectionTasks {
         }
         Runnable task;
         while ((task = tasks.poll()) != null) {
-            task.run();
+            try {
+                task.run();
+            } catch (Exception ignored) {
+            }
         }
     }
 

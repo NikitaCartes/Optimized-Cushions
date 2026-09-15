@@ -10,6 +10,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import xyz.nikitacartes.optimizedcushions.mixin.server.ServerLevelAccessor;
 import xyz.nikitacartes.optimizedcushions.server.CushionServerExt;
 
 /**
@@ -52,6 +53,28 @@ public class CushionServerGameTests {
 
             pig.stopRiding();
             helper.assertTrue(inTicker(cushion), "idle cushion must be reclaimed by the ticker");
+            assertSingleMembership(helper, cushion);
+            helper.succeed();
+        });
+    }
+
+    /** Demotion must not depend on the server-ticking flag: an idle cushion in the
+     * post-stopTicking window (unticked, flag cleared) still converges back to the ticker. */
+    @GameTest
+    public void demoteWhileUntickedReclaims(GameTestHelper helper) {
+        floor(helper);
+        Cushion cushion = helper.spawn(EntityTypes.CUSHION, CUSHION);
+        helper.runAfterDelay(3, () -> {
+            helper.assertTrue(inTicker(cushion), "starts in ticker");
+            var level = cushion.level();
+            var tickList = ((ServerLevelAccessor) level).optimizedcushions$getEntityTickList();
+            // Simulate the chunk-not-ticking window: on the vanilla list but flag cleared.
+            tickList.add(cushion);
+            ((CushionServerExt) cushion).optimizedcushions$setServerTicking(false);
+            ((xyz.nikitacartes.optimizedcushions.server.ServerLevelExt) level)
+                    .optimizedcushions$cushionTicker().demoteIfIdle(cushion);
+            helper.assertTrue(inTicker(cushion), "idle cushion must be reclaimed even while unticked");
+            assertSingleMembership(helper, cushion);
             helper.succeed();
         });
     }
@@ -133,5 +156,10 @@ public class CushionServerGameTests {
 
     private static boolean serverTicking(Cushion cushion) {
         return ((CushionServerExt) cushion).optimizedcushions$isServerTicking();
+    }
+
+    private static void assertSingleMembership(GameTestHelper helper, Cushion cushion) {
+        boolean inList = ((ServerLevelAccessor) cushion.level()).optimizedcushions$getEntityTickList().contains(cushion);
+        helper.assertTrue(inList != inTicker(cushion), "cushion must live in exactly one tick list");
     }
 }

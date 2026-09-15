@@ -47,11 +47,17 @@ public final class CushionServerTicker {
     /** Reclaims a vanilla-ticked cushion once it is passenger-free again. */
     public void demoteIfIdle(final Cushion cushion) {
         CushionServerExt ext = (CushionServerExt) cushion;
-        if (ext.optimizedcushions$isServerTicking() && !ext.optimizedcushions$isInTicker()
-                && !cushion.isPassenger() && cushion.getPassengers().isEmpty()) {
-            ((ServerLevelAccessor) this.level).optimizedcushions$getEntityTickList().remove(cushion);
-            this.add(cushion);
+        if (ext.optimizedcushions$isInTicker()) {
+            return;
         }
+        if (cushion.isRemoved()) {
+            return;
+        }
+        if (cushion.isPassenger() || !cushion.getPassengers().isEmpty()) {
+            return;
+        }
+        ((ServerLevelAccessor) this.level).optimizedcushions$getEntityTickList().remove(cushion);
+        this.add(cushion);
     }
 
     /** Runs right after the vanilla entity tick loop, same game-tick phase. */
@@ -60,8 +66,14 @@ public final class CushionServerTicker {
         if (count == 0) {
             return;
         }
-        // Same result as vanilla's per-entity isEntityFrozen: everything here is a
-        // non-player entity without player passengers.
+        // Dual guard with the injection site: the call sits inside the
+        // emptyTime < 300 branch, but re-check here so a vanilla restructure
+        // cannot silently leave cushions ticking on an empty server.
+        if (((ServerLevelAccessor) this.level).optimizedcushions$getEmptyTime() >= 300) {
+            return;
+        }
+        // Global fast-path; the per-entity isEntityFrozen check below stays
+        // authoritative for selective freeze.
         if (!this.level.tickRateManager().runsNormally()) {
             return;
         }
@@ -82,6 +94,9 @@ public final class CushionServerTicker {
             // Safety net; the Entity passenger hooks normally promote eagerly.
             if (!cushion.getPassengers().isEmpty() || cushion.isPassenger()) {
                 this.promoteToVanilla(cushion);
+                continue;
+            }
+            if (this.level.tickRateManager().isEntityFrozen(cushion)) {
                 continue;
             }
             if (!distanceManager.inEntityTickingRange(cushion.chunkPosition().pack())) {
