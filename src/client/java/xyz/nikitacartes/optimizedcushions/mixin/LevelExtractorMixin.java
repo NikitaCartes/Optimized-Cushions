@@ -19,7 +19,7 @@ public class LevelExtractorMixin {
         method = "extractVisibleEntities(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/DeltaTracker;Lnet/minecraft/client/renderer/state/level/LevelRenderState;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/extract/LevelExtractor;isEntityVisible(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/culling/Frustum;DDD)Z"
+            target = "Lnet/minecraft/client/renderer/extract/LevelExtractor;isEntityVisible(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/culling/Frustum;DDDFJ)Z"
         )
     )
     private boolean optimizedcushions$skipBakedCushions(
@@ -29,11 +29,13 @@ public class LevelExtractorMixin {
         final double camX,
         final double camY,
         final double camZ,
+        final float partialTicks,
+        final long chunkFadeDuration,
         final Operation<Boolean> original
     ) {
         if (entity instanceof Cushion cushion && CushionTracker.isBaked(cushion) && !cushion.hasCustomName()) {
             return false;
         }
-        return original.call(extractor, entity, frustum, camX, camY, camZ);
+        return original.call(extractor, entity, frustum, camX, camY, camZ, partialTicks, chunkFadeDuration);
     }
 }

@@ -87,8 +87,7 @@ public final class CushionServerTicker {
             if (!distanceManager.inEntityTickingRange(cushion.chunkPosition().pack())) {
                 continue;
             }
-            cushion.setOldPosAndRot();
-            cushion.tickCount++;
+            cushion.commonTick();
             this.level.guardEntityTick(TICK_ACTION, cushion);
         }
     }
