@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("net.neoforged.moddev") version "2.0.147"
     id("dev.kikugie.fletching-table.neoforge") version "0.1.0-alpha.22"
+    id("me.modmuss50.mod-publish-plugin") version "2.2.0"
 }
 
 // Tag this node so [neoforge."<version>"] properties.toml entries resolve as bare property(...) lookups.
@@ -71,8 +72,8 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.register<Copy>("collectJars") {
     group = "build"
     from(tasks.jar.map { it.archiveFile })
-    into(rootProject.layout.buildDirectory.file("libs"))
-    dependsOn("build")
+    into(rootProject.layout.buildDirectory.dir("libs"))
+    dependsOn("build", rootProject.tasks.named("cleanCollectedJars"))
 }
 
 // ModDevGradle only jars `main`; fold the client source set (classes + processed client mixin config) in.
@@ -102,4 +103,36 @@ tasks.processResources {
 // Stonecutter's generated sources must exist before ModDevGradle derives its artifacts.
 tasks.named("createMinecraftArtifacts") {
     dependsOn(tasks.named("stonecutterGenerate"))
+}
+
+publishMods {
+    val modrinthToken = System.getenv("MODRINTH_TOKEN") ?: ""
+    val curseforgeToken = System.getenv("CURSEFORGE_TOKEN") ?: ""
+    val githubToken = System.getenv("GITHUB_TOKEN") ?: ""
+
+    file = tasks.jar.get().archiveFile
+    dryRun = modrinthToken.isEmpty() || curseforgeToken.isEmpty() || githubToken.isEmpty()
+    displayName = "${property("display_name")} ${project.version}"
+    version = project.version.toString()
+    changelog = rootProject.file("RELEASE_NOTE.md").readText()
+    type = STABLE
+    modLoaders.add("neoforge")
+
+    val targets = property("supported_versions").toString().split(",")
+    modrinth {
+        projectId = "PD2xMNLQ"
+        accessToken = modrinthToken
+        targets.forEach(minecraftVersions::add)
+    }
+    curseforge {
+        projectId = "1604330"
+        accessToken = curseforgeToken
+        targets.forEach(minecraftVersions::add)
+        client.set(true)
+        server.set(true)
+    }
+    github {
+        accessToken = githubToken
+        parent(rootProject.tasks.named("publishGithub"))
+    }
 }

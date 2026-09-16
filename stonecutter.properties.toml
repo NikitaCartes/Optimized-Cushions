@@ -1,6 +1,6 @@
 mod_name = "Optimized Cushions"
 mod_id = "optimizedcushions"
-mod_version = "0.1.0"
+mod_version = "1.0.0"
 maven_group = "xyz.nikitacartes"
 
 [fabric."26.3"]
@@ -8,8 +8,12 @@ minecraft_version = "26.3"
 loader_version = "0.19.5"
 fabric_version = "0.160.5+26.3"
 supported_minecraft_version = ">=26.3-"
+display_name = "[26.3]"
+supported_versions = "26.3"
 
 [neoforge."26.3"]
 minecraft_version = "26.3"
 neoforge_version = "26.3.0.0-beta"
 supported_minecraft_version = "[26.3,)"
+display_name = "[26.3]"
+supported_versions = "26.3"
