@@ -18,11 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xyz.nikitacartes.optimizedcushions.CushionRenderStateExt;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-// Targets the backport renderer by name, injecting the overridden Minecraft methods
-// (extractRenderState / submit) through their erased bridge signatures: on obfuscated nodes only the
-// Minecraft supertype carries the mapping the refmap needs. Extends EntityRenderer so the inherited
-// name-display submit stays callable (@Shadow only sees the target class). That method and the
-// CameraRenderState package both changed at 26.1.
 @Mixin(targets = "com.leclowndu93150.cushionbackport.client.CushionRenderer")
 public abstract class CushionRendererMixin extends EntityRenderer<Entity, EntityRenderState> {
     protected CushionRendererMixin(final EntityRendererProvider.Context context) {
@@ -53,7 +48,6 @@ public abstract class CushionRendererMixin extends EntityRenderer<Entity, Entity
         final CallbackInfo ci
     ) {
         if (((CushionRenderStateExt) state).optimizedcushions$isBaked()) {
-            // The cushion is part of the chunk mesh; keep only the name tag (cushions are not Leashable).
             //? if >=26.1 {
             this.submitNameDisplay(state, poseStack, submitNodeCollector, camera);
             //?} else

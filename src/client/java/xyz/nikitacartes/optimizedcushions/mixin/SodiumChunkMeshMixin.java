@@ -2,6 +2,7 @@
 package xyz.nikitacartes.optimizedcushions.mixin;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -21,22 +22,21 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xyz.nikitacartes.optimizedcushions.CushionBaker;
+import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-/**
- * Bakes cushions into Sodium's chunk meshes at {@code runChunkMeshAppenders}, its per-section
- * appender hook, emitting into CUTOUT like {@code SectionCompilerMixin} does for the vanilla path.
- * {@code @Pseudo} + string targets: only one platform hook class exists per node, and none when
- * Sodium is absent.
- */
 @Pseudo
 @Mixin(targets = {
     "net.caffeinemc.mods.sodium.fabric.level.FabricLevelRenderHooks",
     "net.caffeinemc.mods.sodium.neoforge.level.NeoForgeLevelRenderHooks"
 }, remap = false)
 public class SodiumChunkMeshMixin {
-    @Inject(method = "runChunkMeshAppenders", at = @At("HEAD"), remap = false)
+    private static final Logger optimizedcushions$LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
+
+    @Inject(method = "runChunkMeshAppenders", at = @At("HEAD"), remap = false, require = 0)
     private void optimizedcushions$bakeCushions(
         final List<?> renderers,
         //? if >=1.21.11 {
@@ -50,9 +50,7 @@ public class SodiumChunkMeshMixin {
         final CallbackInfo ci
     ) {
         //? if <26.1 {
-        /*// Pre-26.1 the hook omits the origin; recover the section's min corner from the slice's private
-        // originBlockX/Y/Z, which sit one chunk (+16) below.
-        LevelSliceOriginAccessor acc = (LevelSliceOriginAccessor) (Object) slice;
+        /*LevelSliceOriginAccessor acc = (LevelSliceOriginAccessor) (Object) slice;
         BlockPos origin = new BlockPos(acc.optimizedcushions$originBlockX() + 16, acc.optimizedcushions$originBlockY() + 16, acc.optimizedcushions$originBlockZ() + 16);
         *///?}
         Map<Integer, CushionTracker.Snapshot> cushions = CushionTracker.getForSection(SectionPos.asLong(origin));
@@ -60,14 +58,28 @@ public class SodiumChunkMeshMixin {
             return;
         }
 
-        //? if >=1.21.11 {
-        VertexConsumer buffer = typeToConsumer.apply(ChunkSectionLayer.CUTOUT);
-        //?} else
-        /*VertexConsumer buffer = typeToConsumer.apply(RenderType.cutout());*/
-        SectionPos sectionPos = SectionPos.of(origin);
-        for (CushionTracker.Snapshot cushion : cushions.values()) {
-            CushionBaker.emitFallback(buffer, cushion, sectionPos, slice);
+        final VertexConsumer buffer;
+        try {
+            //? if >=1.21.11 {
+            buffer = typeToConsumer.apply(ChunkSectionLayer.CUTOUT);
+            //?} else
+            /*buffer = typeToConsumer.apply(RenderType.cutout());*/
+        } catch (Exception e) {
+            return;
         }
+        if (buffer == null) {
+            return;
+        }
+        SectionPos sectionPos = SectionPos.of(origin);
+        for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
+            try {
+                CushionBaker.emitFallback(buffer, cushion, sectionPos, slice);
+            } catch (Exception e) {
+                optimizedcushions$LOGGER.warn("Failed to bake cushion {}", cushion, e);
+            }
+        }
+
+        CushionSectionTasks.addTask(SectionPos.asLong(origin), () -> CushionTracker.commitBakedSection(SectionPos.asLong(origin)));
     }
 }
 //?}

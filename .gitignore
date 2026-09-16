@@ -1,11 +1,13 @@
 # gradle
 
-remapped/
-
 .gradle/
 build/
 out/
 classes/
+
+# eclipse
+
+*.launch
 
 # idea
 
@@ -22,8 +24,21 @@ bin/
 .classpath
 .project
 
+# macos
+
+*.DS_Store
+
 # fabric
 
 run/
+
+# stonecutter
+
 /versions/
-/client/versions/
+
+# java
+
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr

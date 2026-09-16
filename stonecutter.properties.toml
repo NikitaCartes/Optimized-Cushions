@@ -19,30 +19,40 @@ minecraft_version = "1.20.1"
 loader_version = "0.19.3"
 fabric_version = "0.92.6+1.20.1"
 supported_minecraft_version = ">=1.20.1- <1.21"
+display_name = "[1.20.1]"
+supported_versions = "1.20.1"
 
 [fabric."1.21.1"]
 minecraft_version = "1.21.1"
 loader_version = "0.19.3"
 fabric_version = "0.116.13+1.21.1"
 supported_minecraft_version = ">=1.21.1- <1.21.2"
+display_name = "[1.21.1]"
+supported_versions = "1.21.1"
 
 [fabric."1.21.11"]
 minecraft_version = "1.21.11"
 loader_version = "0.19.3"
 fabric_version = "0.141.4+1.21.11"
 supported_minecraft_version = ">=1.21.11- <26.1"
+display_name = "[1.21.11]"
+supported_versions = "1.21.11"
 
 [fabric."26.1.2"]
 minecraft_version = "26.1.2"
 loader_version = "0.19.3"
 fabric_version = "0.154.2+26.1.2"
 supported_minecraft_version = ">=26.1.2- <26.2"
+display_name = "[26.1.2]"
+supported_versions = "26.1.2"
 
 [fabric."26.2"]
 minecraft_version = "26.2"
 loader_version = "0.19.3"
 fabric_version = "0.154.2+26.2"
 supported_minecraft_version = ">=26.2-"
+display_name = "[26.2]"
+supported_versions = "26.2"
 
 # ---------------------------------------------------------------------------
 # NeoForge
@@ -54,6 +64,8 @@ neoforge_version = "21.1.228"
 cushionbackport_version_id = "CALLFNZp"  # Modrinth version id — dev-runtime test mod
 sodium_version_id = "S3DUMfBo"           # Modrinth version id — dev-runtime test mod
 supported_minecraft_version = "[1.21.1,1.21.2)"
+display_name = "[1.21.1]"
+supported_versions = "1.21.1"
 
 [neoforge."1.21.11"]
 minecraft_version = "1.21.11"
@@ -61,6 +73,8 @@ neoforge_version = "21.11.42"
 cushionbackport_version_id = "Ps7I1fAX"  # Modrinth version id — dev-runtime test mod
 sodium_version_id = "fyQ1HOA0"           # Modrinth version id — dev-runtime test mod
 supported_minecraft_version = "[1.21.11,26.1)"
+display_name = "[1.21.11]"
+supported_versions = "1.21.11"
 
 [neoforge."26.1.2"]
 minecraft_version = "26.1.2"
@@ -68,6 +82,8 @@ neoforge_version = "26.1.2.78"
 cushionbackport_version_id = "iBa1aD7e"  # Modrinth version id — dev-runtime test mod
 sodium_version_id = "UETw0GTI"           # Modrinth version id — dev-runtime test mod
 supported_minecraft_version = "[26.1.2,26.2)"
+display_name = "[26.1.2]"
+supported_versions = "26.1.2"
 
 [neoforge."26.2"]
 minecraft_version = "26.2"
@@ -75,3 +91,5 @@ neoforge_version = "26.2.0.8-beta"
 cushionbackport_version_id = "fr24Xyf3"  # Modrinth version id — dev-runtime test mod
 sodium_version_id = "KHPycol7"           # Modrinth version id — dev-runtime test mod
 supported_minecraft_version = "[26.2,)"
+display_name = "[26.2]"
+supported_versions = "26.2"

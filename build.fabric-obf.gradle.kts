@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("fabric-loom") version "1.17-SNAPSHOT"
+    id("me.modmuss50.mod-publish-plugin") version "2.2.0"
     id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22"
 }
 
@@ -86,8 +87,8 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.register<Copy>("collectJars") {
     group = "build"
     from(tasks.remapJar.map { it.archiveFile })
-    into(rootProject.layout.buildDirectory.file("libs"))
-    dependsOn("build")
+    into(rootProject.layout.buildDirectory.dir("libs"))
+    dependsOn("build", rootProject.tasks.named("cleanCollectedJars"))
 }
 
 // Loom's dev env pulls LWJGL 3.3.2 over vanilla 1.20.1's 3.3.1, and Sodium 0.5's EarlyDriverScanner
@@ -110,5 +111,37 @@ tasks.processResources {
     inputs.property("supported_minecraft_version", supportedMc)
     filesMatching("fabric.mod.json") {
         expand(mapOf("version" to modVersion, "supported_minecraft_version" to supportedMc))
+    }
+}
+
+publishMods {
+    val modrinthToken = System.getenv("MODRINTH_TOKEN") ?: ""
+    val curseforgeToken = System.getenv("CURSEFORGE_TOKEN") ?: ""
+    val githubToken = System.getenv("GITHUB_TOKEN") ?: ""
+
+    file = tasks.remapJar.get().archiveFile
+    dryRun = modrinthToken.isEmpty() || curseforgeToken.isEmpty() || githubToken.isEmpty()
+    displayName = "${property("display_name")} ${project.version}"
+    version = project.version.toString()
+    changelog = rootProject.file("RELEASE_NOTE.md").readText()
+    type = STABLE
+    modLoaders.add("fabric")
+
+    val targets = property("supported_versions").toString().split(",")
+    modrinth {
+        projectId = "PD2xMNLQ"
+        accessToken = modrinthToken
+        targets.forEach(minecraftVersions::add)
+    }
+    curseforge {
+        projectId = "1604330"
+        accessToken = curseforgeToken
+        targets.forEach(minecraftVersions::add)
+        client.set(true)
+        server.set(true)
+    }
+    github {
+        accessToken = githubToken
+        parent(rootProject.tasks.named("publishGithub"))
     }
 }

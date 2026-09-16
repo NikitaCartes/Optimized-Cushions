@@ -1,9 +1,8 @@
 {
     "required": true,
     "package": "xyz.nikitacartes.optimizedcushions.mixin",
+    "plugin": "xyz.nikitacartes.optimizedcushions.mixin.OptimizedCushionsMixinPlugin",
     //? if fabric && <26.1 {
-    // Obfuscated Fabric runs intermediary; the legacy Mixin AP emits this refmap, named in
-    // build.fabric-obf.gradle.kts. Loom does not add the key to hand-listed configs.
     "refmap": "client-optimizedcushions.refmap.json",
     //?}
     //? if >=26.1 {
@@ -29,7 +28,9 @@
         "LevelExtractorMixin",
         //?}
         //? if >=1.20.2 {
-        "SectionCompilerMixin"
+        "SectionCompilerMixin",
+        "RenderSectionMixin",
+        "LevelRendererMixin"
         //? if >=1.21.1 {
         ,
         "SodiumChunkMeshMixin"
@@ -39,7 +40,9 @@
         *///?}
         //?}
         //?} else
-        /*"ChunkRenderDispatcherMixin"*/
+        /*"ChunkRenderDispatcherMixin",
+        "ChunkRenderCommitMixin",
+        "LevelRendererMixin"*/
     ],
     "injectors": {
         "defaultRequire": 1

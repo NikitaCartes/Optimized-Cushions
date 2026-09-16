@@ -1,8 +1,10 @@
 package xyz.nikitacartes.optimizedcushions;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,16 +16,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 
-/**
- * Client-side index of Cushion-Backport cushions, grouped by the chunk section of
- * {@code blockPosition()}. Load/unload events and the setPos/onSyncedDataUpdated hooks feed a dirty
- * queue drained at end of tick. Mutated on the client main thread only; read from section meshing
- * threads through {@link #BY_SECTION}, which holds immutable snapshots. Cushions are typed as
- * {@link Entity} and their colour read through the {@link CushionExt} duck: no compile dependency.
- */
 public final class CushionTracker {
-    /** Immutable per-cushion state used for baking. */
-    public record Snapshot(double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
+    public record Snapshot(Entity cushion, double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
     }
 
     private static final Map<Integer, Snapshot> SNAPSHOTS = new HashMap<>();
@@ -35,8 +29,6 @@ public final class CushionTracker {
     }
 
     public static void onLoad(final Entity cushion) {
-        // Flushing only in tick() would wipe spawn-chunk cushions: on a level change
-        // their ENTITY_LOAD fires before the first end-of-tick.
         if (cushion.level() != lastLevel) {
             flush(cushion.level());
         }
@@ -61,37 +53,42 @@ public final class CushionTracker {
             return;
         }
 
-        for (Entity cushion : DIRTY) {
+        List<Entity> pending = new ArrayList<>(DIRTY);
+        pending.forEach(DIRTY::remove);
+        for (Entity cushion : pending) {
             if (cushion.isRemoved() || cushion.level() != minecraft.level) {
                 drop(cushion);
             } else {
                 update(cushion);
             }
         }
-        DIRTY.clear();
     }
 
-    /** Whether the given cushion is currently rendered as chunk geometry instead of an entity model. */
     public static boolean isBaked(final Entity cushion) {
         return ((CushionExt) cushion).optimizedcushions$isBaked();
     }
 
-    /** Read from section meshing threads. Returns null when the section has no baked cushions. */
     public static Map<Integer, Snapshot> getForSection(final long sectionKey) {
         return BY_SECTION.get(sectionKey);
     }
 
     private static void flush(final Level level) {
+        for (Snapshot snapshot : SNAPSHOTS.values()) {
+            ((CushionExt) snapshot.cushion()).optimizedcushions$setBaked(false);
+        }
         SNAPSHOTS.clear();
+        for (ConcurrentHashMap<Integer, Snapshot> inner : BY_SECTION.values()) {
+            inner.clear();
+        }
         BY_SECTION.clear();
         DIRTY.clear();
+        CushionSectionTasks.clear();
         lastLevel = level;
     }
 
     private static void update(final Entity cushion) {
         Snapshot next = snapshot(cushion);
         Snapshot prev = SNAPSHOTS.put(cushion.getId(), next);
-        ((CushionExt) cushion).optimizedcushions$setBaked(next.bakeable());
         if (next.equals(prev)) {
             return;
         }
@@ -99,6 +96,9 @@ public final class CushionTracker {
         if (prev != null && prev.bakeable()) {
             removeFromSection(prev.sectionKey(), cushion.getId());
             markDirty(prev.sectionKey());
+            if (!next.bakeable()) {
+                CushionSectionTasks.addTask(prev.sectionKey(), () -> commitUnbaked(cushion.getId(), prev.sectionKey(), cushion));
+            }
         }
 
         if (next.bakeable()) {
@@ -110,23 +110,42 @@ public final class CushionTracker {
     }
 
     private static void drop(final Entity cushion) {
-        ((CushionExt) cushion).optimizedcushions$setBaked(false);
         Snapshot prev = SNAPSHOTS.remove(cushion.getId());
         if (prev != null && prev.bakeable()) {
             removeFromSection(prev.sectionKey(), cushion.getId());
             markDirty(prev.sectionKey());
+            CushionSectionTasks.addTask(prev.sectionKey(), () -> commitUnbaked(cushion.getId(), prev.sectionKey(), cushion));
+        } else {
+            ((CushionExt) cushion).optimizedcushions$setBaked(false);
         }
     }
 
-    // isCurrentlyGlowing, not Minecraft.shouldEntityAppearGlowing: its extra branch
-    // (spectator outlines) only applies to players.
     private static boolean isBakeable(final Entity cushion) {
         return !cushion.isCurrentlyGlowing() && !cushion.displayFireAnimation() && !cushion.isInvisible();
+    }
+
+    public static void commitBakedSection(final long sectionKey) {
+        Map<Integer, Snapshot> section = BY_SECTION.get(sectionKey);
+        if (section == null) {
+            return;
+        }
+        for (Snapshot snapshot : new ArrayList<>(section.values())) {
+            ((CushionExt) snapshot.cushion()).optimizedcushions$setBaked(true);
+        }
+    }
+
+    public static void commitUnbaked(final int id, final long sectionKey, final Entity cushion) {
+        Map<Integer, Snapshot> section = BY_SECTION.get(sectionKey);
+        Snapshot current = section == null ? null : section.get(id);
+        if (current == null || current.cushion() != cushion) {
+            ((CushionExt) cushion).optimizedcushions$setBaked(false);
+        }
     }
 
     private static Snapshot snapshot(final Entity cushion) {
         BlockPos lightPos = BlockPos.containing(cushion.getLightProbePosition(1.0F));
         return new Snapshot(
+            cushion,
             cushion.getX(),
             cushion.getY(),
             cushion.getZ(),
@@ -149,12 +168,19 @@ public final class CushionTracker {
     }
 
     private static void markDirty(final long sectionKey) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
         int x = SectionPos.x(sectionKey);
         int y = SectionPos.y(sectionKey);
         int z = SectionPos.z(sectionKey);
-        //? if >=26.2 {
-        Minecraft.getInstance().levelExtractor.setSectionDirty(x, y, z);
-        //?} else
-        /*Minecraft.getInstance().levelRenderer.setSectionDirty(x, y, z);*/
+        try {
+            //? if >=26.2 {
+            mc.levelExtractor.setSectionDirty(x, y, z);
+            //?} else
+            /*mc.levelRenderer.setSectionDirty(x, y, z);*/
+        } catch (Exception ignored) {
+        }
     }
 }

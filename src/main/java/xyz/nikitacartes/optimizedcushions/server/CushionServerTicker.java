@@ -9,20 +9,12 @@ import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.mixin.server.BlockAttachedEntityAccessor;
 import xyz.nikitacartes.optimizedcushions.mixin.server.ServerLevelAccessor;
 
-/**
- * Ticks passenger-free cushions outside the vanilla entity tick list, skipping the per-entity
- * overhead (despawn checks, ticking-range lookups, profiler scopes) that dominates server time on
- * cushion-heavy maps. Cushions with passengers stay on the vanilla list so tickPassenger/rideTick
- * behave exactly as vanilla. Entries are all {@link OptCushion} but typed as {@link Entity},
- * because this addon does not compile against the backport.
- */
 public final class CushionServerTicker {
     private static final Consumer<Entity> TICK_ACTION = Entity::tick;
-    private static final int CHECK_INTERVAL = 100; // BlockAttachedEntity check interval
+    private static final int CHECK_INTERVAL = 100;
 
     private final ServerLevel level;
     private final ReferenceLinkedOpenHashSet<Entity> cushions = new ReferenceLinkedOpenHashSet<>();
-    // Reused snapshot so cushions removed/promoted mid-tick can't invalidate iteration.
     private Object[] iterationBuffer = new Object[0];
 
     public CushionServerTicker(final ServerLevel level) {
@@ -41,30 +33,34 @@ public final class CushionServerTicker {
         }
     }
 
-    /** Hands the cushion back to the vanilla entity tick list (it got involved with passengers). */
     public void promoteToVanilla(final Entity cushion) {
         this.remove(cushion);
         ((ServerLevelAccessor) this.level).optimizedcushions$getEntityTickList().add(cushion);
     }
 
-    /** Reclaims a vanilla-ticked cushion once it is passenger-free again. */
     public void demoteIfIdle(final Entity cushion) {
         CushionServerExt ext = (CushionServerExt) cushion;
-        if (ext.optimizedcushions$isServerTicking() && !ext.optimizedcushions$isInTicker()
-                && !cushion.isPassenger() && cushion.getPassengers().isEmpty()) {
-            ((ServerLevelAccessor) this.level).optimizedcushions$getEntityTickList().remove(cushion);
-            this.add(cushion);
+        if (ext.optimizedcushions$isInTicker()) {
+            return;
         }
+        if (cushion.isRemoved()) {
+            return;
+        }
+        if (cushion.isPassenger() || !cushion.getPassengers().isEmpty()) {
+            return;
+        }
+        ((ServerLevelAccessor) this.level).optimizedcushions$getEntityTickList().remove(cushion);
+        this.add(cushion);
     }
 
-    /** Runs right after the vanilla entity tick loop, same game-tick phase. */
     public void tick() {
         int count = this.cushions.size();
         if (count == 0) {
             return;
         }
-        // Same result as vanilla's per-entity isEntityFrozen: everything here is a non-player
-        // entity without player passengers. Tick-freezing only exists from 1.20.3.
+        if (((ServerLevelAccessor) this.level).optimizedcushions$getEmptyTime() >= 300) {
+            return;
+        }
         //? if >=1.20.3 {
         if (!this.level.tickRateManager().runsNormally()) {
             return;
@@ -84,21 +80,22 @@ public final class CushionServerTicker {
                 this.remove(cushion);
                 continue;
             }
-            // Safety net; the Entity passenger hooks normally promote eagerly.
             if (!cushion.getPassengers().isEmpty() || cushion.isPassenger()) {
                 this.promoteToVanilla(cushion);
                 continue;
             }
+            //? if >=1.20.3 {
+            if (this.level.tickRateManager().isEntityFrozen(cushion)) {
+                continue;
+            }
+            //?}
             BlockAttachedEntityAccessor accessor = (BlockAttachedEntityAccessor) cushion;
-            // ChunkPos#pack was named toLong before the 26.1 rename snapshot.
             //? if >=26.1 {
             long chunkKey = cushion.chunkPosition().pack();
             //?} else
             /*long chunkKey = cushion.chunkPosition().toLong();*/
             if (accessor.optimizedcushions$getTicksSinceLastCheck() >= CHECK_INTERVAL
                     && !distanceManager.inEntityTickingRange(chunkKey)) {
-                // Vanilla freezes the whole tick outside entity-ticking range; this defers the
-                // survives/fluid poll by another interval, one range lookup per 100 ticks.
                 accessor.optimizedcushions$setTicksSinceLastCheck(0);
                 continue;
             }

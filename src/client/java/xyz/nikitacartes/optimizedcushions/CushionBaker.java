@@ -42,14 +42,6 @@ import net.minecraft.data.AtlasIds;
 import xyz.nikitacartes.optimizedcushions.mixin.ModelPartCubeAccessor;
 *///?}
 
-/**
- * Captures the Cushion-Backport cushion model geometry once per model bake, then emits it into chunk
- * section buffers with entity-style lighting. Sprites live in the {@code cushionbackport} namespace
- * and are stitched onto the block atlas by {@code assets/minecraft/atlases/blocks.json}.
- *
- * <p>Guarded on two axes: the emit path (26.1+ baked-quad pipeline vs the pre-rewrite vertex path)
- * and the model-introspection API (record ModelPart on 1.21.11+ vs field-based Cube/Polygon/Vertex).
- */
 public final class CushionBaker {
     private record QuadTemplate(Vector3f[] positions, float[] u, float[] v, Direction face) {
     }
@@ -57,11 +49,8 @@ public final class CushionBaker {
     private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
     }
 
-    // The backport registers its cushion model geometry under this layer (CushionModelLayers.CUSHION).
     private static final ModelLayerLocation CUSHION_LAYER = new ModelLayerLocation(id("cushionbackport", "cushion"), "main");
 
-    // Inlined from Lighting's private diffuse directions: the field type changed Vector3f->Vector3fc
-    // at 26.2, so an accesswidener would need a per-version descriptor.
     private static final Vector3fc DIFFUSE_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
     private static final Vector3fc DIFFUSE_LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
     private static final Vector3fc NETHER_DIFFUSE_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
@@ -70,8 +59,6 @@ public final class CushionBaker {
     private static final float[] DIFFUSE_NETHER = diffuseByFace(NETHER_DIFFUSE_LIGHT_0, NETHER_DIFFUSE_LIGHT_1);
     private static final EnumMap<DyeColor, Identifier> SPRITE_IDS = buildSpriteIds();
 
-    // ModelPart vertices store normalized (0..1) texture coordinates. TextureAtlasSprite.getU/getV
-    // take that form from 1.21 on, but 1.20.1 takes 0..16 block-texture space and divides by 16.
     //? if =1.20.1 {
     /*private static final float UV_SCALE = 16.0F;
     *///?} else {
@@ -91,7 +78,6 @@ public final class CushionBaker {
         return ids;
     }
 
-    // fromNamespaceAndPath was added in 1.20.5; 1.20.1 still uses the two-arg constructor.
     private static Identifier id(final String namespace, final String path) {
         //? if =1.20.1 {
         /*return new Identifier(namespace, path);
@@ -100,8 +86,6 @@ public final class CushionBaker {
         //?}
     }
 
-    // The cushion sprites are stitched onto the block atlas; look them up there. The atlas handle
-    // moved from ModelManager to a dedicated AtlasManager at 1.21.11.
     private static TextureAtlasSprite sprite(final DyeColor color) {
         //? if >=1.21.11 {
         return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SPRITE_IDS.get(color));
@@ -110,10 +94,19 @@ public final class CushionBaker {
     }
 
     //? if >=26.1 {
-    /** Called on section meshing worker threads. Emits via the 26.1+ baked-quad section pipeline. */
     public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final RenderSectionRegion region) {
-        List<QuadTemplate> quads = templates(cushion.dir());
-        TextureAtlasSprite sprite = sprite(cushion.color());
+        List<QuadTemplate> quads;
+        try {
+            quads = templates(cushion.dir());
+        } catch (Exception e) {
+            return;
+        }
+        TextureAtlasSprite sprite;
+        try {
+            sprite = sprite(cushion.color());
+        } catch (Exception e) {
+            return;
+        }
         float offsetX = (float)(cushion.x() - sectionPos.minBlockX());
         float offsetY = (float)(cushion.y() - sectionPos.minBlockY());
         float offsetZ = (float)(cushion.z() - sectionPos.minBlockZ());
@@ -122,8 +115,6 @@ public final class CushionBaker {
             region.getBrightness(LightLayer.SKY, cushion.lightPos())
         );
         float[] diffuse = CardinalLighting.NETHER.equals(region.cardinalLighting()) ? DIFFUSE_NETHER : DIFFUSE_DEFAULT;
-        // shade=false: entity-style diffuse is already baked into the vertex colour, so block
-        // face-shading must not be applied on top.
         BakedQuad.MaterialInfo materialInfo = new BakedQuad.MaterialInfo(sprite, ChunkSectionLayer.CUTOUT, null, -1, false, 0);
         QuadInstance instance = new QuadInstance();
         instance.setLightCoords(light);
@@ -147,14 +138,22 @@ public final class CushionBaker {
     }
     //?} else {
     /*public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final BlockAndTintGetter region) {
-        List<QuadTemplate> quads = templates(cushion.dir());
-        TextureAtlasSprite sprite = sprite(cushion.color());
+        List<QuadTemplate> quads;
+        try {
+            quads = templates(cushion.dir());
+        } catch (Exception e) {
+            return;
+        }
+        TextureAtlasSprite sprite;
+        try {
+            sprite = sprite(cushion.color());
+        } catch (Exception e) {
+            return;
+        }
         float offsetX = (float)(cushion.x() - sectionPos.minBlockX());
         float offsetY = (float)(cushion.y() - sectionPos.minBlockY());
         float offsetZ = (float)(cushion.z() - sectionPos.minBlockZ());
         int light = LevelRenderer.getLightColor(region, cushion.lightPos());
-        // No CardinalLighting pre-26.1; the overworld diffuse table is used everywhere (the nether
-        // variant only differs on the down-face and cushions sit flush, so the difference is minor).
         float[] diffuse = DIFFUSE_DEFAULT;
 
         for (QuadTemplate template : quads) {
@@ -170,15 +169,19 @@ public final class CushionBaker {
     *///?}
 
     //? if >=1.21.1 {
-    /**
-     * Sodium path: emit into Sodium's fallback chunk {@link VertexConsumer} for the CUTOUT layer.
-     * Sodium derives the cull-facing and sprite from the UVs itself, so only position, colour, uv,
-     * light and normal are supplied per vertex. Call shape is identical across 1.21.1..26.2; only
-     * packed light differs by era.
-     */
     public static void emitFallback(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final BlockAndTintGetter region) {
-        List<QuadTemplate> quads = templates(cushion.dir());
-        TextureAtlasSprite sprite = sprite(cushion.color());
+        List<QuadTemplate> quads;
+        try {
+            quads = templates(cushion.dir());
+        } catch (Exception e) {
+            return;
+        }
+        TextureAtlasSprite sprite;
+        try {
+            sprite = sprite(cushion.color());
+        } catch (Exception e) {
+            return;
+        }
         float offsetX = (float)(cushion.x() - sectionPos.minBlockX());
         float offsetY = (float)(cushion.y() - sectionPos.minBlockY());
         float offsetZ = (float)(cushion.z() - sectionPos.minBlockZ());
@@ -190,8 +193,6 @@ public final class CushionBaker {
         //?} else {
         /*int light = LevelRenderer.getLightColor(region, cushion.lightPos());
         *///?}
-        // Overworld diffuse table only; the nether variant differs only on the down-face and cushions
-        // sit flush, matching emit() <26.1.
         for (QuadTemplate template : quads) {
             Direction face = template.face();
             int channel = (int)(DIFFUSE_DEFAULT[face.get3DDataValue()] * 255.0F) & 0xFF;
@@ -208,8 +209,6 @@ public final class CushionBaker {
     }
     //?}
 
-    // The chunk BLOCK vertex layout: position, color, uv0, uv2(light), normal. The builder API was
-    // rewritten to addVertex(...) at 1.21; 1.20.1 still uses the vertex()...endVertex() chain.
     //? if >=1.21 <26.1 {
     /*private static void emitVertex(final VertexConsumer buffer, final float x, final float y, final float z, final int color, final float u, final float v, final int light, final Direction face) {
         buffer.addVertex(x, y, z, color, u, v, OverlayTexture.NO_OVERLAY, light, face.getStepX(), face.getStepY(), face.getStepZ());
@@ -238,7 +237,6 @@ public final class CushionBaker {
     }
 
     //? if >=1.21.11 {
-    /** Replays the transforms of CushionRenderer for each horizontal facing (record ModelPart API). */
     private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models) {
         ModelPart root = models.bakeLayer(CUSHION_LAYER);
         Map<Direction, List<QuadTemplate>> byDirection = new EnumMap<>(Direction.class);
@@ -287,8 +285,6 @@ public final class CushionBaker {
                         continue;
                     }
 
-                    // transformDirection (not Pose.transformNormal, absent on 1.20.1): our pose is
-                    // pure rotation, so the direction transform equals the normal transform.
                     Vector3f normal = pose.pose().transformDirection(polygon.normal, new Vector3f());
                     Direction face = Direction.getNearest(normal.x(), normal.y(), normal.z());
                     Vector3f[] positions = new Vector3f[4];
@@ -297,8 +293,6 @@ public final class CushionBaker {
 
                     for (int i = 0; i < 4; i++) {
                         ModelPart.Vertex vertex = polygon.vertices[i];
-                        // Vertex.pos is in model units; Cube.compile divides by 16 before the
-                        // transform (the record's worldX/worldY/worldZ on 1.21.11+ do it instead).
                         positions[i] = pose.pose().transformPosition(vertex.pos.x() / 16.0F, vertex.pos.y() / 16.0F, vertex.pos.z() / 16.0F, new Vector3f());
                         u[i] = vertex.u;
                         v[i] = vertex.v;
@@ -314,7 +308,6 @@ public final class CushionBaker {
     }
     *///?}
 
-    /** The transform CushionRenderer applies before drawing the model, per horizontal facing. */
     private static PoseStack poseFor(final Direction direction) {
         PoseStack poseStack = new PoseStack();
         poseStack.mulPose(Axis.YP.rotationDegrees(direction.toYRot()));
@@ -323,7 +316,6 @@ public final class CushionBaker {
         return poseStack;
     }
 
-    /** Entity shader diffuse: min(1, 0.4 + 0.6 * (max(0, L0·N) + max(0, L1·N))) per axis face. */
     private static float[] diffuseByFace(final Vector3fc light0, final Vector3fc light1) {
         float[] byFace = new float[6];
         for (Direction direction : Direction.values()) {

@@ -5,6 +5,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.renderer.ChunkBufferBuilderPack;
@@ -16,14 +17,16 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xyz.nikitacartes.optimizedcushions.CushionBaker;
+import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-// 1.20.1 has no SectionCompiler; meshes are built by RebuildTask.compile. Appends cushion quads to
-// CUTOUT after the block loop, beginning that layer if no cutout block did. beginLayer is inlined as
-// buffer.begin(QUADS, BLOCK) to avoid reaching the enclosing RenderChunk from this inner-class mixin.
 @Mixin(targets = "net.minecraft.client.renderer.chunk.ChunkRenderDispatcher$RenderChunk$RebuildTask")
 public class ChunkRenderDispatcherMixin {
+    private static final Logger optimizedcushions$LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
+
     @Inject(
         method = "compile",
         at = @At(value = "INVOKE", target = "Ljava/util/Set;contains(Ljava/lang/Object;)Z", ordinal = 0)
@@ -49,9 +52,15 @@ public class ChunkRenderDispatcherMixin {
         }
 
         SectionPos sectionPos = SectionPos.of(origin);
-        for (CushionTracker.Snapshot cushion : cushions.values()) {
-            CushionBaker.emit(buffer, cushion, sectionPos, region);
+        for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
+            try {
+                CushionBaker.emit(buffer, cushion, sectionPos, region);
+            } catch (Exception e) {
+                optimizedcushions$LOGGER.warn("Failed to bake cushion {}", cushion, e);
+            }
         }
+
+        CushionSectionTasks.addTask(SectionPos.asLong(origin), () -> CushionTracker.commitBakedSection(SectionPos.asLong(origin)));
     }
 }
 *///?}

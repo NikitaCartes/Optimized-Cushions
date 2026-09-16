@@ -17,7 +17,6 @@ import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.server.ServerPlayerExt;
 import xyz.nikitacartes.optimizedcushions.server.TrackedEntityExt;
 
-/** Two tracker optimisations for static cushions. Plain fields: ChunkMap is single-threaded. */
 @Mixin(ChunkMap.class)
 public class ChunkMapMixin {
     @Unique
@@ -26,8 +25,11 @@ public class ChunkMapMixin {
     @Unique
     private boolean optimizedcushions$currentEntityQuiescent;
 
-    // move(): cushions never move, so their visibility only changes when the player does;
-    // vanilla re-checks every tracked entity on every move packet, even rotation-only ones.
+    @Inject(method = "tick()V", at = @At("HEAD"))
+    private void optimizedcushions$resetQuiescent(final CallbackInfo ci) {
+        this.optimizedcushions$currentEntityQuiescent = false;
+    }
+
     @Inject(method = "move(Lnet/minecraft/server/level/ServerPlayer;)V", at = @At("HEAD"))
     private void optimizedcushions$classifyMove(final ServerPlayer player, final CallbackInfo ci) {
         this.optimizedcushions$skipCushionsThisMove =
@@ -51,8 +53,6 @@ public class ChunkMapMixin {
         original.call(trackedEntity, player);
     }
 
-    // tick(): for a quiescent cushion sendChanges() is a guaranteed no-op, so skip it and
-    // the ticking-range lookup. Anything that would make it send flips a checked flag first.
     @WrapOperation(
             method = "tick()V",
             at = @At(
@@ -64,19 +64,21 @@ public class ChunkMapMixin {
     private SectionPos optimizedcushions$classifyTrackedEntity(
             final @Coerce Object trackedEntity, final Operation<SectionPos> original
     ) {
-        TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
-        Entity entity = ext.optimizedcushions$entity();
-        // needsSync isn't listed: when set, the || chain short-circuits before this runs.
-        // syncVelocity/syncPosition are 26.3-only and always false for a static BlockAttachedEntity.
-        this.optimizedcushions$currentEntityQuiescent = entity instanceof OptCushion
-                //? if >=26.3 {
-                /*&& !entity.syncVelocity
-                && !entity.syncPosition
-                *///?}
-                && !entity.getEntityData().isDirty()
-                && entity.getPassengers().isEmpty()
-                && ((ServerEntityAccessor) ext.optimizedcushions$serverEntity())
-                        .optimizedcushions$getLastPassengers().isEmpty();
+        try {
+            TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
+            Entity entity = ext.optimizedcushions$entity();
+            this.optimizedcushions$currentEntityQuiescent = entity instanceof OptCushion
+                    //? if >=26.3 {
+                    /*&& !entity.syncVelocity
+                    && !entity.syncPosition
+                    *///?}
+                    && !entity.getEntityData().isDirty()
+                    && entity.getPassengers().isEmpty()
+                    && ((ServerEntityAccessor) ext.optimizedcushions$serverEntity())
+                            .optimizedcushions$getLastPassengers().isEmpty();
+        } catch (Exception e) {
+            this.optimizedcushions$currentEntityQuiescent = false;
+        }
         return original.call(trackedEntity);
     }
 
@@ -90,6 +92,9 @@ public class ChunkMapMixin {
     private boolean optimizedcushions$skipQuiescentSendChanges(
             final @Coerce Object distanceManager, final long chunkKey, final Operation<Boolean> original
     ) {
-        return !this.optimizedcushions$currentEntityQuiescent && original.call(distanceManager, chunkKey);
+        if (this.optimizedcushions$currentEntityQuiescent) {
+            return false;
+        }
+        return original.call(distanceManager, chunkKey);
     }
 }

@@ -13,7 +13,6 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 @Mixin(targets = "com.leclowndu93150.cushionbackport.entity.Cushion")
 public abstract class CushionMixin implements CushionExt {
-    // The backport Cushion's own colour accessor; shadowed so the tracker can read it.
     @Shadow
     public abstract DyeColor getColor();
 
@@ -35,8 +34,6 @@ public abstract class CushionMixin implements CushionExt {
         return this.getColor();
     }
 
-    // Block-attached entities never interpolate: fires on spawn/teleport only.
-    // Rotation-only teleports are covered too, moveTo always calls setPos.
     @Inject(method = "setPos(DDD)V", at = @At("TAIL"))
     private void optimizedcushions$onSetPos(final double x, final double y, final double z, final CallbackInfo ci) {
         Entity self = (Entity) (Object) this;

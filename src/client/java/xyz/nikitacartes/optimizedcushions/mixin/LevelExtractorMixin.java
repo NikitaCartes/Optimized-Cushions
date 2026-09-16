@@ -13,8 +13,6 @@ import xyz.nikitacartes.optimizedcushions.OptCushion;
 
 @Mixin(LevelExtractor.class)
 public class LevelExtractorMixin {
-    // Named cushions keep the vanilla path so the name tag still renders. Wraps the call, not
-    // isEntityVisible itself, so F3+B hitboxes still see baked cushions.
     @WrapOperation(
         method = "extractVisibleEntities(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/DeltaTracker;Lnet/minecraft/client/renderer/state/level/LevelRenderState;)V",
         at = @At(

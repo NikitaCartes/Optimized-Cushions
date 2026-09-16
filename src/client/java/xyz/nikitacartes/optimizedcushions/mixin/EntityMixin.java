@@ -11,8 +11,6 @@ import xyz.nikitacartes.optimizedcushions.OptCushion;
 
 @Mixin(Entity.class)
 public class EntityMixin {
-    // Covers colour and the glowing/invisible/on-fire shared flags; the isClientSide
-    // guard keeps integrated-server entities out of the tracker.
     @Inject(method = "onSyncedDataUpdated(Lnet/minecraft/network/syncher/EntityDataAccessor;)V", at = @At("TAIL"))
     private void optimizedcushions$onDataUpdated(final EntityDataAccessor<?> accessor, final CallbackInfo ci) {
         Entity self = (Entity) (Object) this;
