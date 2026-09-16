@@ -22,21 +22,12 @@ import org.slf4j.LoggerFactory;
 public class OptimizedCushionsClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
 
-    public static boolean isObeLoaded() {
-        return FabricLoader.getInstance().isModLoaded("obe");
-    }
-
     public static boolean isSodiumLoaded() {
         return FabricLoader.getInstance().isModLoaded("sodium");
     }
 
     @Override
     public void onInitializeClient() {
-        if (isObeLoaded()) {
-            LOGGER.info("Optimised Block Entities detected - Optimized Cushions Backport client is disabled, cushions render as backport entities.");
-            return;
-        }
-
         if (isSodiumLoaded()) {
             //? if >=1.21.1 {
             LOGGER.info("Sodium detected - baking cushions into Sodium chunk meshes.");
@@ -65,11 +56,6 @@ public class OptimizedCushionsClient {
     public static final Logger LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
 
     public OptimizedCushionsClient() {
-        if (ModList.get().isLoaded("obe")) {
-            LOGGER.info("Optimised Block Entities detected - Optimized Cushions Backport client is disabled, cushions render as backport entities.");
-            return;
-        }
-
         if (ModList.get().isLoaded("sodium")) {
             LOGGER.info("Sodium detected - baking cushions into Sodium chunk meshes.");
         }

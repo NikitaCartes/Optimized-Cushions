@@ -1,8 +1,5 @@
 package xyz.nikitacartes.optimizedcushions.mixin;
 
-//? if fabric {
-import static xyz.nikitacartes.optimizedcushions.OptimizedCushionsClient.isObeLoaded;
-//?}
 import java.util.List;
 import java.util.Set;
 import org.objectweb.asm.tree.ClassNode;
@@ -16,7 +13,6 @@ public class OptimizedCushionsMixinPlugin implements IMixinConfigPlugin {
     @Override
     public void onLoad(final String mixinPackage) {
         //? if fabric {
-        this.disabled = isObeLoaded();
         //?} else {
         /*try {
             Class.forName("net.minecraft.client.Minecraft", false, getClass().getClassLoader());
