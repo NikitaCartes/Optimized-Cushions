@@ -24,16 +24,20 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 /**
  * Bakes cushions into Sodium chunk meshes.
  *
- * <p>On the Fabric loader Sodium's meshing task delegates its tail to
- * {@code FabricLevelRenderHooks.runChunkMeshAppenders}, which is otherwise a no-op:
- * injecting at its head runs on the meshing worker with the section's vertex-consumer
- * factory, level slice and section origin already resolved. Only vanilla types appear
+ * <p>On either loader Sodium's meshing task delegates its tail to the loader's
+ * {@code LevelRenderHooks.runChunkMeshAppenders}, which is otherwise a no-op (Fabric)
+ * or the addon-renderer dispatcher (NeoForge): injecting at its head runs on the
+ * meshing worker with the section's vertex-consumer factory, level slice and section
+ * origin already resolved. Only vanilla types appear
  * in this signature (the Sodium slice is coerced to its {@code BlockAndTintGetter}
  * superinterface), so no Sodium dependency is needed and {@code @Pseudo} simply
  * skips this mixin when Sodium is absent.
  */
 @Pseudo
-@Mixin(targets = "net.caffeinemc.mods.sodium.fabric.level.FabricLevelRenderHooks", remap = false)
+@Mixin(targets = {
+        "net.caffeinemc.mods.sodium.fabric.level.FabricLevelRenderHooks",
+        "net.caffeinemc.mods.sodium.neoforge.level.NeoForgeLevelRenderHooks"
+}, remap = false)
 public class SodiumChunkMeshMixin {
     private static final Logger optimizedcushions$LOGGER = LoggerFactory.getLogger("optimizedcushions");
 

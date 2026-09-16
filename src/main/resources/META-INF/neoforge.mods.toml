@@ -1,0 +1,36 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/NikitaCartes/Optimized-Cushions/issues"
+
+[[mods]]
+modId = "optimizedcushions"
+version = "${version}"
+displayName = "Optimized Cushions"
+displayURL = "https://github.com/NikitaCartes/Optimized-Cushions"
+authors = "NikitaCartes"
+description = '''
+Optimizes cushion entities on both sides: client- and server-side. Fully vanilla-compatible, works with vanilla clients and servers.
+'''
+
+# Side-gating is in the configs: server mixins in "mixins", client mixins in "client" (skipped on a
+# dedicated server). No refmap (NeoForge runs Mojmap).
+[[mixins]]
+config = "optimizedcushions.mixins.json"
+
+[[mixins]]
+config = "optimizedcushions.client.mixins.json"
+
+[[dependencies.optimizedcushions]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neoforge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.optimizedcushions]]
+modId = "minecraft"
+type = "required"
+versionRange = "${supported_minecraft_version}"
+ordering = "NONE"
+side = "BOTH"

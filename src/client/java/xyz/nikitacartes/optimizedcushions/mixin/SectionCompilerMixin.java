@@ -4,6 +4,9 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import java.util.ArrayList;
+//? if neoforge {
+import java.util.List;
+//?}
 import java.util.Map;
 import net.minecraft.client.renderer.SectionBufferBuilderPack;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -31,9 +34,15 @@ public abstract class SectionCompilerMixin {
     /**
      * Runs after the block loop, right before the started layers are built into meshes,
      * and appends the quads of every baked cushion in this section to the CUTOUT layer.
+     * NeoForge turns the vanilla 4-arg {@code compile} into a shim and moves the real
+     * body to a 5-arg overload, targeted explicitly.
      */
     @Inject(
+        //? if neoforge {
+        /*method = "compile(Lnet/minecraft/core/SectionPos;Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;Lcom/mojang/blaze3d/vertex/VertexSorting;Lnet/minecraft/client/renderer/SectionBufferBuilderPack;Ljava/util/List;)Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;",
+        *///?} else {
         method = "compile",
+        //?}
         at = @At(value = "INVOKE", target = "Ljava/util/Map;entrySet()Ljava/util/Set;", ordinal = 0),
         slice = @Slice(
             from = @At(value = "INVOKE", target = "Lnet/minecraft/core/BlockPos;betweenClosed(Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/BlockPos;)Ljava/lang/Iterable;"),
@@ -45,6 +54,9 @@ public abstract class SectionCompilerMixin {
         final RenderSectionRegion region,
         final VertexSorting vertexSorting,
         final SectionBufferBuilderPack builders,
+        //? if neoforge {
+        /*final List<?> additionalRenderers,
+        *///?}
         final CallbackInfoReturnable<SectionCompiler.Results> cir,
         final @Local(name = "startedLayers") Map<ChunkSectionLayer, BufferBuilder> startedLayers
     ) {

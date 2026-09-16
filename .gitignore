@@ -32,6 +32,10 @@ bin/
 
 run/
 
+# stonecutter
+
+/versions/
+
 # java
 
 hs_err_*.log
