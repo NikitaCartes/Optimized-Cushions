@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import xyz.nikitacartes.optimizedcushions.mixin.server.ServerLevelAccessor;
 import xyz.nikitacartes.optimizedcushions.server.CushionServerExt;
+import xyz.nikitacartes.optimizedcushions.server.ServerLevelExt;
 
 /**
  * Server-side game tests for the cushion tick/tracker optimisations. Each test asserts the
@@ -69,10 +70,10 @@ public class CushionServerGameTests {
             var level = cushion.level();
             var tickList = ((ServerLevelAccessor) level).optimizedcushions$getEntityTickList();
             // Simulate the chunk-not-ticking window: on the vanilla list but flag cleared.
+            ((ServerLevelExt) level).optimizedcushions$cushionTicker().remove(cushion);
             tickList.add(cushion);
             ((CushionServerExt) cushion).optimizedcushions$setServerTicking(false);
-            ((xyz.nikitacartes.optimizedcushions.server.ServerLevelExt) level)
-                    .optimizedcushions$cushionTicker().demoteIfIdle(cushion);
+            ((ServerLevelExt) level).optimizedcushions$cushionTicker().demoteIfIdle(cushion);
             helper.assertTrue(inTicker(cushion), "idle cushion must be reclaimed even while unticked");
             assertSingleMembership(helper, cushion);
             helper.succeed();
