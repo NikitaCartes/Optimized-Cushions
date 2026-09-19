@@ -45,11 +45,34 @@ fabricApi {
     }
 }
 
+// Test-mod jar for production runs: the `gametest` source set has no jar task,
+// and the production run below only sees real mod jars. 26.x is
+// Mojang-deobfuscated, so no remapping step is needed.
+val gametestJar by tasks.registering(org.gradle.api.tasks.bundling.Jar::class) {
+    group = "build"
+    description = "Assembles the gametest (test-mod) jar for production runs."
+    archiveClassifier.set("gametest")
+    from(sourceSets["gametest"].output)
+}
+
+// Client game tests on headless CI (GitHub Actions): run them through Loom's
+// production run task, which manages its own Xvfb display, instead of wrapping
+// the dev `runClientGameTest` task in `xvfb-run` (which hangs indefinitely).
+// See https://docs.fabricmc.net/develop/automatic-testing#run-game-tests-on-github-actions
+tasks.register("runProductionClientGameTest", net.fabricmc.loom.task.prod.ClientProductionRunTask::class) {
+    jvmArgs.add("-Dfabric.client.gametest")
+    useXVFB.set(true)
+    mods.from(gametestJar)
+}
+
 dependencies {
     // 26.x ships Mojang-deobfuscated, so no `mappings(...)` and plain `implementation`.
     minecraft("com.mojang:minecraft:${property("minecraft_version")}")
     implementation("net.fabricmc:fabric-loader:${property("loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
+    // Production-run mods: the CI client game test launches the game like a
+    // production launcher, so it needs fabric-api as an installed mod.
+    productionRuntimeMods("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
 }
 
 java {

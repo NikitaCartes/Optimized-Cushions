@@ -9,6 +9,7 @@ on: [pull_request, push]
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -26,7 +27,15 @@ jobs:
       - name: run GameTests (server, fabric)
         run: ./gradlew :26.3-fabric:runGameTest --info
       - name: run GameTests (client, fabric)
-        run: xvfb-run -a ./gradlew :26.3-fabric:runClientGameTest --info
+        run: ./gradlew :26.3-fabric:runProductionClientGameTest
+      - name: upload client GameTest logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-gametest-logs
+          path: |
+            versions/26.3-fabric/run/logs/
+            versions/26.3-fabric/run/crash-reports/
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
