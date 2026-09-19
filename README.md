@@ -5,6 +5,8 @@ Vanilla 26.3 added [cushions](https://minecraft.wiki/w/Cushion) as *entities*. A
 This mod treats a cushion as what it is: a static thing. The client bakes it into the terrain so it renders like a block; the server drops the per-tick tracking and ticking overhead. 
 Gameplay is unchanged: sitting, breaking, picking, sounds, particles, drops and saves are all vanilla.
 
+On versions without vanilla cushions the same cushions come from [Cushion-Backport](https://modrinth.com/mod/cushions-backport), which is required there. The optimizations are the same on every version.
+
 To be honest: cushions are already a very light entity, especially server-side, so you will only see a difference if you have a LOT of them.
 
 ## How it works
@@ -25,6 +27,7 @@ On the server, cushions that have nobody sitting on them skip the entity tracker
 ![image](images/example.png)
 
 ## Compatibility
+**If you encounter any incompatibility**, please create an issue or send me a message on the Discord server. Thanks!
 
 - **Vanilla-safe** — no protocol or save changes. The client half works on vanilla servers, and the server half serves vanilla clients.
 - **Sodium** — supported: cushions are baked into Sodium chunk meshes just like on vanilla. The **server** optimizations work with or without it.
