@@ -5,16 +5,20 @@ import java.util.function.Consumer;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
-import xyz.nikitacartes.optimizedcushions.mixin.server.BlockAttachedEntityAccessor;
 import xyz.nikitacartes.optimizedcushions.mixin.server.ServerLevelAccessor;
 
+/**
+ * Ticks passenger-free cushions outside the vanilla entity tick list, skipping the per-entity
+ * overhead (despawn checks, ticking-range lookups, profiler scopes) that dominates server time
+ * on cushion-heavy maps. Cushions with passengers stay on the vanilla list so tickPassenger/
+ * rideTick behave exactly as vanilla.
+ */
 public final class CushionServerTicker {
     private static final Consumer<Entity> TICK_ACTION = Entity::tick;
-    private static final int CHECK_INTERVAL = 100;
 
     private final ServerLevel level;
     private final ReferenceLinkedOpenHashSet<Entity> cushions = new ReferenceLinkedOpenHashSet<>();
+    // Reused snapshot so cushions removed/promoted mid-tick can't invalidate iteration.
     private Object[] iterationBuffer = new Object[0];
 
     public CushionServerTicker(final ServerLevel level) {
@@ -33,11 +37,13 @@ public final class CushionServerTicker {
         }
     }
 
+    /** Hands the cushion back to the vanilla entity tick list (it got involved with passengers). */
     public void promoteToVanilla(final Entity cushion) {
         this.remove(cushion);
         ((ServerLevelAccessor) this.level).optimizedcushions$getEntityTickList().add(cushion);
     }
 
+    /** Reclaims a vanilla-ticked cushion once it is passenger-free again. */
     public void demoteIfIdle(final Entity cushion) {
         CushionServerExt ext = (CushionServerExt) cushion;
         if (ext.optimizedcushions$isInTicker()) {
@@ -53,15 +59,21 @@ public final class CushionServerTicker {
         this.add(cushion);
     }
 
+    /** Runs right after the vanilla entity tick loop, same game-tick phase. */
     public void tick() {
         int count = this.cushions.size();
         if (count == 0) {
             return;
         }
+        // Dual guard with the injection site: the call sits inside the
+        // emptyTime < 300 branch, but re-check here so a vanilla restructure
+        // cannot silently leave cushions ticking on an empty server.
         if (((ServerLevelAccessor) this.level).optimizedcushions$getEmptyTime() >= 300) {
             return;
         }
         //? if >=1.20.3 {
+        // Global fast-path; the per-entity isEntityFrozen check below stays
+        // authoritative for selective freeze.
         if (!this.level.tickRateManager().runsNormally()) {
             return;
         }
@@ -80,6 +92,7 @@ public final class CushionServerTicker {
                 this.remove(cushion);
                 continue;
             }
+            // Safety net; the Entity passenger hooks normally promote eagerly.
             if (!cushion.getPassengers().isEmpty() || cushion.isPassenger()) {
                 this.promoteToVanilla(cushion);
                 continue;
@@ -89,18 +102,22 @@ public final class CushionServerTicker {
                 continue;
             }
             //?}
-            BlockAttachedEntityAccessor accessor = (BlockAttachedEntityAccessor) cushion;
             //? if >=26.1 {
-            long chunkKey = cushion.chunkPosition().pack();
-            //?} else
-            /*long chunkKey = cushion.chunkPosition().toLong();*/
-            if (accessor.optimizedcushions$getTicksSinceLastCheck() >= CHECK_INTERVAL
-                    && !distanceManager.inEntityTickingRange(chunkKey)) {
-                accessor.optimizedcushions$setTicksSinceLastCheck(0);
+            if (!distanceManager.inEntityTickingRange(cushion.chunkPosition().pack())) {
                 continue;
             }
+            //?} else {
+            /*if (!distanceManager.inEntityTickingRange(cushion.chunkPosition().toLong())) {
+                continue;
+            }
+            *///?}
+            // Entity.commonTick() inlined: it exists only on 26.3, where its body is exactly
+            // these statements (plus a client-side interpolation no-op on the server).
             cushion.setOldPosAndRot();
             cushion.tickCount++;
+            if (cushion.invulnerableTime > 0) {
+                cushion.invulnerableTime--;
+            }
             this.level.guardEntityTick(TICK_ACTION, cushion);
         }
     }

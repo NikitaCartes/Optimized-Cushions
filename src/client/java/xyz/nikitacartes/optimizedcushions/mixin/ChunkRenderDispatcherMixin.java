@@ -52,6 +52,8 @@ public class ChunkRenderDispatcherMixin {
         }
 
         SectionPos sectionPos = SectionPos.of(origin);
+        // Snapshot copy: BY_SECTION inner maps are live ConcurrentHashMaps, so a worker
+        // iterating values() directly could bake a torn membership set.
         for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
             try {
                 CushionBaker.emit(buffer, cushion, sectionPos, region);

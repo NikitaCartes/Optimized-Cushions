@@ -13,7 +13,6 @@
     /*"compatibilityLevel": "JAVA_17",
     *///?}
     "mixins": [
-        "BlockAttachedEntityAccessor",
         "ChunkMapMixin",
         "CushionMixin",
         "EntityCallbacksMixin",
@@ -22,6 +21,7 @@
         "ServerLevelAccessor",
         "ServerLevelMixin",
         "ServerPlayerMixin",
+        "TrackedEntityAccessor",
         "TrackedEntityMixin"
     ],
     "injectors": {

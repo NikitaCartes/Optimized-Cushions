@@ -3,7 +3,14 @@ package xyz.nikitacartes.optimizedcushions.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexSorting;
+//? if >=26.2 {
+import com.mojang.blaze3d.PrimitiveTopology;
+//?} else {
+/*import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+*///?}
 import java.util.ArrayList;
 import java.util.Map;
 import net.minecraft.client.renderer.SectionBufferBuilderPack;
@@ -17,7 +24,6 @@ import net.minecraft.client.renderer.chunk.RenderSectionRegion;
 import net.minecraft.client.renderer.chunk.RenderChunkRegion;
 *///?}
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -31,12 +37,54 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 @Mixin(SectionCompiler.class)
 public abstract class SectionCompilerMixin {
-    //? if >=1.21.11 {
-    @Shadow
-    protected abstract BufferBuilder getOrBeginLayer(Map<ChunkSectionLayer, BufferBuilder> startedLayers, SectionBufferBuilderPack builders, ChunkSectionLayer layer);
-    //?} else {
-    /*@Shadow
-    protected abstract BufferBuilder getOrBeginLayer(Map<RenderType, BufferBuilder> startedLayers, SectionBufferBuilderPack builders, RenderType layer);
+    // Local replicate of SectionCompiler.getOrBeginLayer: the legacy Mixin AP emits no
+    // @Shadow-method refmap entries, so @Shadow of this vanilla method breaks in obfuscated
+    // production. The body below is identical to vanilla (get-or-create + begin QUADS/BLOCK)
+    // and uses only stable public APIs. Kept @Unique so it can never clash with the real one.
+    //? if >=26.2 {
+    @Unique
+    private BufferBuilder optimizedcushions$getOrBeginLayer(Map<ChunkSectionLayer, BufferBuilder> startedLayers, SectionBufferBuilderPack builders, ChunkSectionLayer layer) {
+        BufferBuilder builder = startedLayers.get(layer);
+        if (builder == null) {
+            ByteBufferBuilder buffer = builders.buffer(layer);
+            builder = new BufferBuilder(buffer, PrimitiveTopology.QUADS, layer.vertexFormat());
+            startedLayers.put(layer, builder);
+        }
+        return builder;
+    }
+    //?} elif >=26.1 {
+    /*@Unique
+    private BufferBuilder optimizedcushions$getOrBeginLayer(Map<ChunkSectionLayer, BufferBuilder> startedLayers, SectionBufferBuilderPack builders, ChunkSectionLayer layer) {
+        BufferBuilder builder = startedLayers.get(layer);
+        if (builder == null) {
+            ByteBufferBuilder buffer = builders.buffer(layer);
+            builder = new BufferBuilder(buffer, VertexFormat.Mode.QUADS, layer.vertexFormat());
+            startedLayers.put(layer, builder);
+        }
+        return builder;
+    }
+    *///?} elif >=1.21.11 {
+    /*@Unique
+    private BufferBuilder optimizedcushions$getOrBeginLayer(Map<ChunkSectionLayer, BufferBuilder> startedLayers, SectionBufferBuilderPack builders, ChunkSectionLayer layer) {
+        BufferBuilder builder = startedLayers.get(layer);
+        if (builder == null) {
+            ByteBufferBuilder buffer = builders.buffer(layer);
+            builder = new BufferBuilder(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+            startedLayers.put(layer, builder);
+        }
+        return builder;
+    }
+    *///?} else {
+    /*@Unique
+    private BufferBuilder optimizedcushions$getOrBeginLayer(Map<RenderType, BufferBuilder> startedLayers, SectionBufferBuilderPack builders, RenderType layer) {
+        BufferBuilder builder = startedLayers.get(layer);
+        if (builder == null) {
+            ByteBufferBuilder buffer = builders.buffer(layer);
+            builder = new BufferBuilder(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+            startedLayers.put(layer, builder);
+        }
+        return builder;
+    }
     *///?}
 
     @Unique
@@ -79,10 +127,12 @@ public abstract class SectionCompilerMixin {
         }
 
         //? if >=1.21.11 {
-        BufferBuilder builder = getOrBeginLayer(startedLayers, builders, ChunkSectionLayer.CUTOUT);
+        BufferBuilder builder = optimizedcushions$getOrBeginLayer(startedLayers, builders, ChunkSectionLayer.CUTOUT);
         //?} else
-        /*BufferBuilder builder = getOrBeginLayer(startedLayers, builders, RenderType.cutout());*/
+        /*BufferBuilder builder = optimizedcushions$getOrBeginLayer(startedLayers, builders, RenderType.cutout());*/
 
+        // Snapshot copy: BY_SECTION inner maps are live ConcurrentHashMaps, so a worker
+        // iterating values() directly could bake a torn membership set.
         for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
             try {
                 CushionBaker.emit(builder, cushion, sectionPos, region);

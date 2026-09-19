@@ -17,7 +17,7 @@ public abstract class CushionMixin implements CushionExt {
     public abstract DyeColor getColor();
 
     @Unique
-    private boolean optimizedcushions$baked;
+    private volatile boolean optimizedcushions$baked;
 
     @Override
     public boolean optimizedcushions$isBaked() {
@@ -34,6 +34,8 @@ public abstract class CushionMixin implements CushionExt {
         return this.getColor();
     }
 
+    // Block-attached entities never interpolate: fires on spawn/teleport only.
+    // Rotation-only teleports are covered too, moveTo always calls setPos.
     @Inject(method = "setPos(DDD)V", at = @At("TAIL"))
     private void optimizedcushions$onSetPos(final double x, final double y, final double z, final CallbackInfo ci) {
         Entity self = (Entity) (Object) this;

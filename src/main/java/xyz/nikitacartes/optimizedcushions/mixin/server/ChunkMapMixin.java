@@ -68,10 +68,10 @@ public class ChunkMapMixin {
             TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
             Entity entity = ext.optimizedcushions$entity();
             this.optimizedcushions$currentEntityQuiescent = entity instanceof OptCushion
-                    //? if >=26.3 {
-                    /*&& !entity.syncVelocity
+                    && !entity.hurtMarked
+                    //? if >=26.2 {
                     && !entity.syncPosition
-                    *///?}
+                    //?}
                     && !entity.getEntityData().isDirty()
                     && entity.getPassengers().isEmpty()
                     && ((ServerEntityAccessor) ext.optimizedcushions$serverEntity())

@@ -21,8 +21,12 @@
         //? if >=1.21.5 {
         "CushionRenderStateMixin",
         "CushionRendererMixin",
-        //?} else {
+        //?}
+        //? if >=1.21 <1.21.5 {
         /*"CushionRendererOldMixin",
+        *///?}
+        //? if <1.21 {
+        /*"CushionRendererLegacyMixin",
         *///?}
         //? if >=26.2 {
         "LevelExtractorMixin",

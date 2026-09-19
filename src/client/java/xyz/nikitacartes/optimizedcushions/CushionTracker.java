@@ -16,7 +16,20 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 
+/**
+ * Client-side index of cushion entities, grouped by the chunk section that owns them
+ * (the section of {@code blockPosition()}). Event-driven: load/unload events and the
+ * setPos/onSyncedDataUpdated mixin hooks feed a dirty queue drained at end of tick.
+ * Mutated only on the client main thread; read from section meshing worker threads
+ * via the concurrent {@link #BY_SECTION} map holding immutable snapshots.
+ *
+ * <p>The baked flag is deliberately not flipped here. Section remeshing completes
+ * asynchronously, so the flag flips through {@link CushionSectionTasks} at the moment
+ * the rebuilt mesh is installed: no invisible frame when baking, no double render
+ * when unbaking.
+ */
 public final class CushionTracker {
+    /** Immutable per-cushion state used for baking. */
     public record Snapshot(Entity cushion, double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
     }
 
@@ -29,6 +42,8 @@ public final class CushionTracker {
     }
 
     public static void onLoad(final Entity cushion) {
+        // Flushing only in tick() would wipe spawn-chunk cushions: on a level change
+        // their ENTITY_LOAD fires before the first end-of-tick.
         if (cushion.level() != lastLevel) {
             flush(cushion.level());
         }
@@ -53,6 +68,8 @@ public final class CushionTracker {
             return;
         }
 
+        // Snapshot + removeAll instead of for+clear: entries added while draining
+        // are kept for the next tick, and a re-entrant markChanged cannot CME.
         List<Entity> pending = new ArrayList<>(DIRTY);
         pending.forEach(DIRTY::remove);
         for (Entity cushion : pending) {
@@ -64,19 +81,26 @@ public final class CushionTracker {
         }
     }
 
+    /** Whether the given cushion is currently rendered as chunk geometry instead of an entity model. */
     public static boolean isBaked(final Entity cushion) {
         return ((CushionExt) cushion).optimizedcushions$isBaked();
     }
 
+    /** Read from section meshing threads. Returns null when the section has no baked cushions. */
     public static Map<Integer, Snapshot> getForSection(final long sectionKey) {
         return BY_SECTION.get(sectionKey);
     }
 
     private static void flush(final Level level) {
+        // Survivors of a level swap keep their object identity: reset baked flags via
+        // the snapshots (which carry the cushion ref) so none stays culled with no
+        // BY_SECTION entry and no queued commit to unbake it.
         for (Snapshot snapshot : SNAPSHOTS.values()) {
             ((CushionExt) snapshot.cushion()).optimizedcushions$setBaked(false);
         }
         SNAPSHOTS.clear();
+        // Clear inner maps first: a worker holding an inner reference from
+        // getForSection must not bake stale snapshots into a reused section key.
         for (ConcurrentHashMap<Integer, Snapshot> inner : BY_SECTION.values()) {
             inner.clear();
         }
@@ -97,6 +121,8 @@ public final class CushionTracker {
             removeFromSection(prev.sectionKey(), cushion.getId());
             markDirty(prev.sectionKey());
             if (!next.bakeable()) {
+                // The copy stays in the installed mesh until this section rebuilds;
+                // go back to the entity path only then, never while it is still shown.
                 CushionSectionTasks.addTask(prev.sectionKey(), () -> commitUnbaked(cushion.getId(), prev.sectionKey(), cushion));
             }
         }
@@ -106,6 +132,8 @@ public final class CushionTracker {
             if (prev == null || !prev.bakeable() || prev.sectionKey() != next.sectionKey()) {
                 markDirty(next.sectionKey());
             }
+            // No flag flip here: the section compiler queues commitBakedSection, which
+            // runs when the rebuilt mesh is installed, so the entity is never missing.
         }
     }
 
@@ -120,10 +148,18 @@ public final class CushionTracker {
         }
     }
 
+    // isCurrentlyGlowing, not Minecraft.shouldEntityAppearGlowing: its extra branch
+    // (spectator outlines) only applies to players.
     private static boolean isBakeable(final Entity cushion) {
         return !cushion.isCurrentlyGlowing() && !cushion.displayFireAnimation() && !cushion.isInvisible();
     }
 
+    /**
+     * Runs through {@link CushionSectionTasks} when a rebuilt section mesh is installed:
+     * every cushion baked into that mesh stops rendering as an entity at exactly the
+     * moment its mesh copy appears. Reads only the concurrent section map and writes
+     * only the volatile baked flag, so meshing worker threads may run this.
+     */
     public static void commitBakedSection(final long sectionKey) {
         Map<Integer, Snapshot> section = BY_SECTION.get(sectionKey);
         if (section == null) {
@@ -134,6 +170,12 @@ public final class CushionTracker {
         }
     }
 
+    /**
+     * Runs through {@link CushionSectionTasks} when a rebuilt section mesh is installed:
+     * a cushion whose copy is no longer in that mesh goes back to the entity path at
+     * exactly the moment the new mesh appears. The identity check keeps a stale task
+     * from touching an unrelated cushion that reused the entity id.
+     */
     public static void commitUnbaked(final int id, final long sectionKey, final Entity cushion) {
         Map<Integer, Snapshot> section = BY_SECTION.get(sectionKey);
         Snapshot current = section == null ? null : section.get(id);

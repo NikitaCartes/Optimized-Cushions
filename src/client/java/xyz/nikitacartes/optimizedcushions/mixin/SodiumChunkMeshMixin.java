@@ -71,6 +71,8 @@ public class SodiumChunkMeshMixin {
             return;
         }
         SectionPos sectionPos = SectionPos.of(origin);
+        // Snapshot copy: BY_SECTION inner maps are live ConcurrentHashMaps, so a worker
+        // iterating values() directly could bake a torn membership set.
         for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
             try {
                 CushionBaker.emitFallback(buffer, cushion, sectionPos, slice);

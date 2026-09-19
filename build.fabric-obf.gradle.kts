@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("fabric-loom") version "1.17-SNAPSHOT"
     id("me.modmuss50.mod-publish-plugin") version "2.2.0"
+    id("maven-publish")
     id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22"
 }
 
@@ -10,6 +11,9 @@ stonecutter {
     val (version, loader) = current.project.split('-', limit = 2)
     properties.tags(version, loader)
 }
+
+version = property("mod_version").toString()
+group = property("maven_group").toString()
 
 base.archivesName = "${property("mod_id")}-fabric-mc${property("minecraft_version")}"
 
@@ -80,6 +84,12 @@ java {
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.release.set(javaVersion)
+}
+
+tasks.jar {
+    from(rootProject.file("LICENSE")) {
+        rename { "LICENSE_optimizedcushions" }
+    }
 }
 
 // `gradlew collectJars` on the root runs this in every node, gathering all jars into build/libs.

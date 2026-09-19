@@ -42,15 +42,21 @@ import net.minecraft.data.AtlasIds;
 import xyz.nikitacartes.optimizedcushions.mixin.ModelPartCubeAccessor;
 *///?}
 
+/**
+ * Captures the backport cushion entity model geometry (with the exact PoseStack transforms
+ * {@code CushionRenderer.submit} applies) once per model bake, and emits it into chunk
+ * section buffers with entity-style lighting: a flat lightmap sampled at the entity's
+ * light probe position and the fixed two-directional diffuse the entity shader would apply.
+ */
 public final class CushionBaker {
     private record QuadTemplate(Vector3f[] positions, float[] u, float[] v, Direction face) {
-    }
-
-    private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
+    }    private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
     }
 
     private static final ModelLayerLocation CUSHION_LAYER = new ModelLayerLocation(id("cushionbackport", "cushion"), "main");
 
+    // Inlined from com.mojang.blaze3d.platform.Lighting: that class is client-only,
+    // so no access widener is needed and a Mojang descriptor change cannot break boot.
     private static final Vector3fc DIFFUSE_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
     private static final Vector3fc DIFFUSE_LIGHT_1 = new Vector3f(-0.2F, 1.0F, 0.7F).normalize();
     private static final Vector3fc NETHER_DIFFUSE_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
@@ -93,9 +99,12 @@ public final class CushionBaker {
         /*return Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(SPRITE_IDS.get(color));*/
     }
 
+    /** Called on section meshing worker threads (vanilla and Sodium alike: both regions expose block/sky brightness and cardinal lighting). */
     //? if >=26.1 {
     public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final RenderSectionRegion region) {
         List<QuadTemplate> quads;
+        // Worker threads can race atlas reload / init / disconnect: isolate per cushion
+        // so one bad lookup never aborts the whole section.
         try {
             quads = templates(cushion.dir());
         } catch (Exception e) {
@@ -171,6 +180,7 @@ public final class CushionBaker {
     //? if >=1.21.1 {
     public static void emitFallback(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final BlockAndTintGetter region) {
         List<QuadTemplate> quads;
+        // Same worker-thread isolation as emit above: one bad lookup must not abort the section.
         try {
             quads = templates(cushion.dir());
         } catch (Exception e) {
@@ -190,12 +200,14 @@ public final class CushionBaker {
             region.getBrightness(LightLayer.BLOCK, cushion.lightPos()),
             region.getBrightness(LightLayer.SKY, cushion.lightPos())
         );
+        float[] diffuse = CardinalLighting.NETHER.equals(region.cardinalLighting()) ? DIFFUSE_NETHER : DIFFUSE_DEFAULT;
         //?} else {
         /*int light = LevelRenderer.getLightColor(region, cushion.lightPos());
+        float[] diffuse = DIFFUSE_DEFAULT;
         *///?}
         for (QuadTemplate template : quads) {
             Direction face = template.face();
-            int channel = (int)(DIFFUSE_DEFAULT[face.get3DDataValue()] * 255.0F) & 0xFF;
+            int channel = (int)(diffuse[face.get3DDataValue()] * 255.0F) & 0xFF;
             int color = 0xFF000000 | (channel << 16) | (channel << 8) | channel;
             for (int i = 0; i < 4; i++) {
                 Vector3f pos = template.positions()[i];
@@ -308,6 +320,7 @@ public final class CushionBaker {
     }
     *///?}
 
+    /** Replays the transforms of the backport CushionRenderer.submit for each horizontal facing. */
     private static PoseStack poseFor(final Direction direction) {
         PoseStack poseStack = new PoseStack();
         poseStack.mulPose(Axis.YP.rotationDegrees(direction.toYRot()));
@@ -316,6 +329,7 @@ public final class CushionBaker {
         return poseStack;
     }
 
+    /** Entity shader diffuse: min(1, 0.4 + 0.6 * (max(0, L0·N) + max(0, L1·N))) per axis face. */
     private static float[] diffuseByFace(final Vector3fc light0, final Vector3fc light1) {
         float[] byFace = new float[6];
         for (Direction direction : Direction.values()) {

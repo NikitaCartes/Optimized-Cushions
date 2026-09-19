@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("net.neoforged.moddev") version "2.0.141"
+    id("net.neoforged.moddev") version "2.0.147"
     id("me.modmuss50.mod-publish-plugin") version "2.2.0"
     id("dev.kikugie.fletching-table.neoforge") version "0.1.0-alpha.22"
 }
@@ -10,6 +10,9 @@ stonecutter {
     val (version, loader) = current.project.split('-', limit = 2)
     properties.tags(version, loader)
 }
+
+version = property("mod_version").toString()
+group = property("maven_group").toString()
 
 base.archivesName = "${property("mod_id")}-neoforge-mc${property("minecraft_version")}"
 
@@ -93,6 +96,9 @@ tasks.register<Copy>("collectJars") {
 // ModDevGradle only jars `main`; fold the client source set (classes + processed client mixin config) in.
 tasks.jar {
     from(clientSourceSet.output)
+    from(rootProject.file("LICENSE")) {
+        rename { "LICENSE_optimizedcushions" }
+    }
 }
 
 // Resolve project properties outside the task lambda (see build.fabric-deobf.gradle.kts).

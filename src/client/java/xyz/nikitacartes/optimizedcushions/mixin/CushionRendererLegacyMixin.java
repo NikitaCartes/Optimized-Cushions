@@ -1,4 +1,4 @@
-//? if >=1.21 <1.21.5 {
+//? if <1.21 {
 /*package xyz.nikitacartes.optimizedcushions.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -12,17 +12,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-// Pre-render-state era, 1.21-1.21.11: the backport renderer has no render state, so we key on
-// the entity directly. Cancel the whole render for baked cushions - their model is in the
-// chunk mesh. 1.20.1 uses CushionRendererLegacyMixin (5-arg renderNameTag).
+// 1.20.1 variant of CushionRendererOldMixin: renderNameTag takes no partialTick here.
 //
 // Extends EntityRenderer so shouldShowName/renderNameTag resolve through the vanilla
 // superclass: the legacy Mixin AP emits no @Shadow-method refmap entries, and the backport
 // renderer does not redeclare those EntityRenderer members, so @Shadow of them breaks in
-// obfuscated production. 1.20.1 uses CushionRendererLegacyMixin (5-arg renderNameTag).
+// obfuscated production.
 @Mixin(targets = "com.leclowndu93150.cushionbackport.client.CushionRenderer")
-public abstract class CushionRendererOldMixin extends EntityRenderer<Entity> {
-    protected CushionRendererOldMixin(final EntityRendererProvider.Context context) {
+public abstract class CushionRendererLegacyMixin extends EntityRenderer<Entity> {
+    protected CushionRendererLegacyMixin(final EntityRendererProvider.Context context) {
         super(context);
     }
 
@@ -45,7 +43,7 @@ public abstract class CushionRendererOldMixin extends EntityRenderer<Entity> {
         if (CushionTracker.isBaked(cushion)) {
             // The model is in the chunk mesh; keep the nameplate like the >=1.21.5 path does.
             if (this.shouldShowName(cushion)) {
-                this.renderNameTag(cushion, cushion.getDisplayName(), poseStack, bufferSource, packedLight, partialTicks);
+                this.renderNameTag(cushion, cushion.getDisplayName(), poseStack, bufferSource, packedLight);
             }
             ci.cancel();
         }

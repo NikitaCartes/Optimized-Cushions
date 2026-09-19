@@ -10,9 +10,11 @@
     "contact": {
         "homepage": "https://github.com/NikitaCartes/Optimized-Cushions",
         "sources": "https://github.com/NikitaCartes/Optimized-Cushions",
-        "issues": "https://github.com/NikitaCartes/Optimized-Cushions/issues"
+        "issues": "https://github.com/NikitaCartes/Optimized-Cushions/issues",
+        "discord": "https://discord.gg/UY4nhvUzaK"
     },
     "license": "MIT",
+    "icon": "assets/optimizedcushionsbackport/icon.png",
     "environment": "*",
     "entrypoints": {
         "client": [

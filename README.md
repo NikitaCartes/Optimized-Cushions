@@ -1,40 +1,65 @@
-# Optimized Cushions Backport
+# Optimized Cushions
 
-Multiloader backport of [Optimized Cushions](https://github.com/NikitaCartes/Optimized-Cushions) — an
-add-on that optimises the cushion entity from
-[leclowndu93150/Cushion-Backport](https://www.curseforge.com/minecraft/mc-mods/cushion-backport) on older
-Minecraft versions. The client bakes cushions into the chunk mesh so they draw like blocks; the server
-drops the per-entity tracker and tick overhead. Gameplay is unchanged.
+Vanilla 26.3 added [cushions](https://minecraft.wiki/w/Cushion) as *entities*. A cushion never moves, yet it costs the same as any other entity, both on the client and on the server.
 
-Built on [Stonecutter](https://stonecutter.kikugie.dev/) (flat multiloader) from one shared `src/`. See
-[ROADMAP.md](ROADMAP.md) for design and per-version internals.
+This mod treats a cushion as what it is: a static thing. The client bakes it into the terrain so it renders like a block; the server drops the per-tick tracking and ticking overhead.
+Gameplay is unchanged: sitting, breaking, picking, sounds, particles, drops and saves are all vanilla.
+
+On versions without vanilla cushions the same cushions come from [Cushion-Backport](https://www.curseforge.com/minecraft/mc-mods/cushion-backport), which is required there. The optimizations are the same on every version.
+
+To be honest: cushions are already a very light entity, especially server-side, so you will only see a difference if you have a LOT of them.
+
+## How it works
+
+A cushion is rendered like any other block: baked straight into the chunk mesh and terrain is far cheaper to draw than entities.
+
+On the server, cushions that have nobody sitting on them skip the entity tracker and tick-list and run through one lightweight loop instead. The moment someone sits down (or you `/ride` one) that cushion snaps back to the full vanilla path, so behavior stays exact.
 
 ## Supported versions
 
-| Loader   | Minecraft | Server | Client baking | Sodium baking |
-|----------|-----------|:------:|:-------------:|:-------------:|
-| Fabric   | 1.20.1    |   ✓    |       ✓       | — *(fallback)* |
-| Fabric   | 1.21.1    |   ✓    |       ✓       |       ✓        |
-| Fabric   | 1.21.11   |   ✓    |       ✓       |       ✓        |
-| Fabric   | 26.1.2    |   ✓    |       ✓       |       ✓        |
-| Fabric   | 26.2      |   ✓    |       ✓       |       ✓        |
-| NeoForge | 1.21.1    |   ✓    |       ✓       |       ✓        |
-| NeoForge | 1.21.11   |   ✓    |       ✓       |       ✓        |
-| NeoForge | 26.1.2    |   ✓    |       ✓       |       ✓        |
-| NeoForge | 26.2      |   ✓    |       ✓       |       ✓        |
+| Loader   | Minecraft | Cushion source   | Sodium baking |
+|----------|-----------|------------------|:-------------:|
+| Fabric   | 1.20.1    | Cushion-Backport |       —       |
+| Fabric   | 1.21.1    | Cushion-Backport |       ✓       |
+| Fabric   | 1.21.11   | Cushion-Backport |       ✓       |
+| Fabric   | 26.1.2    | Cushion-Backport |       ✓       |
+| Fabric   | 26.2      | Cushion-Backport |       ✓       |
+| Fabric   | 26.3      | Vanilla          |       ✓       |
+| NeoForge | 1.21.1    | Cushion-Backport |       ✓       |
+| NeoForge | 1.21.11   | Cushion-Backport |       ✓       |
+| NeoForge | 26.1.2    | Cushion-Backport |       ✓       |
+| NeoForge | 26.2      | Cushion-Backport |       ✓       |
+| NeoForge | 26.3      | Vanilla          |       ✓       |
 
-- **Server** — cushions with nobody sitting on them skip the entity tracker and tick-list; they snap back to the full vanilla path the moment someone sits.
-- **Client baking** — cushions render baked into the chunk mesh instead of as entities.
-- **Sodium baking** — under Sodium, cushions bake into Sodium's own chunk meshes rather than falling back to entity rendering. On 1.20.1 the old Sodium 0.5 has no baking hook, so cushions render as normal entities there (server + non-Sodium client baking still apply).
+Fabric builds also require Fabric API. On 1.20.1 the old Sodium 0.5 has no baking hook, so cushions render as normal entities there. Server and non-Sodium client baking still apply on that version.
 
-Planned: Forge (1.18.2–1.20.1) and legacy Fabric (1.18.2, 1.19.2) — see the ROADMAP.
+## Features
 
-> Status: builds green on all 9 nodes and launch-tested in dev (client + dedicated server, with and
-> without Sodium). Note that Loom's dev runtime is Mojang-mapped, so it can't surface mixin-remap issues
-> that only appear against production's intermediary names — the obfuscated-Fabric nodes (1.20.1, 1.21.1,
-> 1.21.11) therefore ship a Mixin refmap so their injections into the cushion entity apply in production.
-> In-game verification on a production launcher is in progress.
+- **More FPS** — cushions are free to render once baked; the boost scales with how many are on screen.
+- **Less memory pressure** — especially on the client.
+- **See them further** — baked cushions are visible to full render distance, just like blocks, instead of the shorter vanilla entity range.
+- **Lighter servers** — big tick-time savings on cushion-heavy worlds (tracker, movement re-checks, and ticking all trimmed).
+- **Nothing lost** — every cushion interaction works exactly as in vanilla.
+- **Resource packs** — cushion textures from your resource pack are picked up automatically.
 
-## Build
+![image](images/example.png)
 
-`./gradlew build` builds every node; jars land in `versions/<mc>-<loader>/build/libs/`.
+## Compatibility
+
+- **Vanilla-safe** — no protocol or save changes. The client half works on vanilla servers, and the server half serves vanilla clients.
+- **Sodium** — supported: cushions are baked into Sodium chunk meshes just like on vanilla. The **server** optimizations work with or without it.
+- **Optimised Block Entities** — Client side are automatically disabled when OBE is installed. The **server** optimizations still work.
+- Cushions fall back to the vanilla renderer while glowing, on fire, or invisible, and name tags / F3+B hitboxes always render the vanilla way.
+
+## Trade-offs
+
+A few small, deliberate differences from vanilla — none affect gameplay (drops, riding, sounds, damage and saves are identical):
+
+- **Client** — because cushions are baked into terrain, a change (place, break, teleport, dye) shows up on the next section rebuild rather than instantly. Textures now mipmap at distance like blocks.
+- **Server** — spawn/despawn for a moving player is checked on a ~1-block / 1-second grid instead of every packet, so a cushion at the far tracking edge can appear up to one block of walking later than vanilla. Support/fluid checks in unloaded-but-not-ticking chunks are deferred rather than frozen.
+
+## Links
+
+- [Modrinth](https://modrinth.com/mod/optimized-cushions)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/optimized-cushions)
+- [Discord](https://discord.gg/UY4nhvUzaK)
