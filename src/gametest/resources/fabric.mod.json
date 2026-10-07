@@ -13,7 +13,8 @@
             "xyz.nikitacartes.optimizedcushions.gametest.CushionServerGameTests"
         ],
         "fabric-client-gametest": [
-            "xyz.nikitacartes.optimizedcushions.gametest.CushionClientGameTest"
+            "xyz.nikitacartes.optimizedcushions.gametest.CushionClientGameTest",
+            "xyz.nikitacartes.optimizedcushions.gametest.CushionRowVisibilityTest"
         ]
     }
 }

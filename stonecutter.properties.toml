@@ -1,6 +1,6 @@
 mod_name = "Optimized Cushions"
 mod_id = "optimizedcushions"
-mod_version = "1.0.0"
+mod_version = "1.1.0"
 maven_group = "xyz.nikitacartes"
 
 [fabric."26.3"]

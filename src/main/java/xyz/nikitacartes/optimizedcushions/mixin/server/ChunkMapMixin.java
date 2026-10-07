@@ -6,6 +6,8 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.decoration.Cushion;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,6 +56,23 @@ public class ChunkMapMixin {
             return;
         }
         original.call(trackedEntity, player);
+    }
+
+    @WrapOperation(
+            method = "addEntity(Lnet/minecraft/world/entity/Entity;)V",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/EntityType;clientTrackingRange()I"
+            )
+    )
+    private int optimizedcushions$widenCushionRange(final EntityType<?> type, final Operation<Integer> original) {
+        // Vanilla tracks cushions only 10 chunks (160 blocks), so the client never receives
+        // (and cannot bake) cushions past that. Cushions are static, so widen to 32 chunks and
+        // let updatePlayer's min(range, viewDistance) cap it at chunk view distance.
+        if (type == EntityTypes.CUSHION) {
+            return 32;
+        }
+        return original.call(type);
     }
 
     // tick(): for a quiescent cushion sendChanges() is a guaranteed no-op, so skip it and
