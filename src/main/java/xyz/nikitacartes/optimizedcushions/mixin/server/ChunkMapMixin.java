@@ -3,9 +3,11 @@ package xyz.nikitacartes.optimizedcushions.mixin.server;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -51,6 +53,23 @@ public class ChunkMapMixin {
             return;
         }
         original.call(trackedEntity, player);
+    }
+
+    @WrapOperation(
+            method = "addEntity(Lnet/minecraft/world/entity/Entity;)V",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/EntityType;clientTrackingRange()I"
+            )
+    )
+    private int optimizedcushions$widenCushionRange(final EntityType<?> type, final Operation<Integer> original) {
+        // No compile dependency on Cushion-Backport: match its entity by registry id.
+        // Cushions are static, so widen to 32 chunks and let updatePlayer's
+        // min(range, viewDistance) cap it at chunk view distance.
+        if ("cushionbackport:cushion".equals(String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(type)))) {
+            return 32;
+        }
+        return original.call(type);
     }
 
     @WrapOperation(
