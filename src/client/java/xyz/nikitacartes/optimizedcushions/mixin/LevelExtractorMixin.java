@@ -9,7 +9,7 @@ import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 
 @Mixin(LevelExtractor.class)
 public class LevelExtractorMixin {
@@ -29,7 +29,7 @@ public class LevelExtractorMixin {
         final double camZ,
         final Operation<Boolean> original
     ) {
-        if (entity instanceof OptCushion && CushionTracker.isBaked(entity) && !entity.hasCustomName()) {
+        if (entity instanceof Cushion && CushionTracker.isBaked(entity) && !entity.hasCustomName()) {
             return false;
         }
         return original.call(extractor, entity, frustum, camX, camY, camZ);

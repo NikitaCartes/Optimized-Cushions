@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 import xyz.nikitacartes.optimizedcushions.server.CushionServerExt;
 import xyz.nikitacartes.optimizedcushions.server.ServerLevelExt;
 
@@ -32,7 +32,7 @@ public class EntityMixin {
 
     @Unique
     private static void optimizedcushions$promote(final Entity entity) {
-        if (entity instanceof OptCushion && entity.level() instanceof ServerLevel level
+        if (entity instanceof Cushion && entity.level() instanceof ServerLevel level
                 && ((CushionServerExt) entity).optimizedcushions$isInTicker()) {
             ((ServerLevelExt) level).optimizedcushions$cushionTicker().promoteToVanilla(entity);
         }
@@ -40,7 +40,7 @@ public class EntityMixin {
 
     @Unique
     private static void optimizedcushions$demote(final Entity entity) {
-        if (entity instanceof OptCushion && entity.level() instanceof ServerLevel level) {
+        if (entity instanceof Cushion && entity.level() instanceof ServerLevel level) {
             ((ServerLevelExt) level).optimizedcushions$cushionTicker().demoteIfIdle(entity);
         }
     }

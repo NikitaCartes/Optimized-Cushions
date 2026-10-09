@@ -9,7 +9,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 
 /**
  * Client game test for the section-baking half: proves a static cushion is baked into chunk
@@ -47,7 +47,7 @@ public class CushionClientGameTest implements FabricClientGameTest {
             return null;
         }
         for (Entity entity : client.level.entitiesForRendering()) {
-            if (entity instanceof OptCushion) {
+            if (entity instanceof Cushion) {
                 return entity;
             }
         }

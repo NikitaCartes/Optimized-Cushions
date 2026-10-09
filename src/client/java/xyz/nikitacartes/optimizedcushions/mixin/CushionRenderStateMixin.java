@@ -1,11 +1,12 @@
 //? if >=1.21.5 {
 package xyz.nikitacartes.optimizedcushions.mixin;
 
+import com.leclowndu93150.cushionbackport.client.CushionRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import xyz.nikitacartes.optimizedcushions.CushionRenderStateExt;
 
-@Mixin(targets = "com.leclowndu93150.cushionbackport.client.CushionRenderState")
+@Mixin(CushionRenderState.class)
 public class CushionRenderStateMixin implements CushionRenderStateExt {
     @Unique
     private boolean optimizedcushions$baked;

@@ -11,15 +11,14 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 
 /**
  * Row visibility test: cushions in a row along +X starting at the player, inside the default
  * gametest view window (render/view distance 5, so everything below also holds at larger
  * distances up to the widened cushion tracking range).
  *
- * <p>Backport cushions come from Cushion-Backport ({@code cushionbackport:cushion}); filtering
- * uses the {@link OptCushion} marker, never a vanilla class.
+ * <p>Backport cushions come from Cushion-Backport ({@code cushionbackport:cushion}).
  *
  * <p>Mod enabled (baked): every cushion ends up {@link CushionTracker#isBaked}, so the whole row
  * renders like terrain. Vanilla proxy (glowing forces the entity path, same as mod disabled):
@@ -86,7 +85,7 @@ public class CushionRowVisibilityTest implements FabricClientGameTest {
             return out;
         }
         for (Entity entity : client.level.entitiesForRendering()) {
-            if (entity instanceof OptCushion) {
+            if (entity instanceof Cushion) {
                 out.add(entity);
             }
         }

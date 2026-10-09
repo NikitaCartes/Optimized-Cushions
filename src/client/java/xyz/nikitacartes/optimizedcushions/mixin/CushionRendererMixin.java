@@ -15,10 +15,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.leclowndu93150.cushionbackport.client.CushionRenderer;
 import xyz.nikitacartes.optimizedcushions.CushionRenderStateExt;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-@Mixin(targets = "com.leclowndu93150.cushionbackport.client.CushionRenderer")
+@Mixin(CushionRenderer.class)
 public abstract class CushionRendererMixin extends EntityRenderer<Entity, EntityRenderState> {
     protected CushionRendererMixin(final EntityRendererProvider.Context context) {
         super(context);

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import com.leclowndu93150.cushionbackport.client.CushionRenderer;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +19,7 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 // superclass: the legacy Mixin AP emits no @Shadow-method refmap entries, and the backport
 // renderer does not redeclare those EntityRenderer members, so @Shadow of them breaks in
 // obfuscated production.
-@Mixin(targets = "com.leclowndu93150.cushionbackport.client.CushionRenderer")
+@Mixin(CushionRenderer.class)
 public abstract class CushionRendererLegacyMixin extends EntityRenderer<Entity> {
     protected CushionRendererLegacyMixin(final EntityRendererProvider.Context context) {
         super(context);

@@ -66,6 +66,9 @@ dependencies {
 
     // Dev-runtime test mods (not shipped): the mod we optimise, plus Sodium when -Pwith_sodium=true.
     // 26.x runs Mojang-native at runtime (no Loom remap), so the loader maps these — plain runtimeOnly.
+    // compileOnly (not shipped, not Jar-in-Jarred): our mixins reference backport classes directly.
+    // Plain compileOnly (not modCompileOnly): 26.x runs Mojang-native, no remap involved.
+    compileOnly(fletchingTable.modrinth("cushions-backport", property("minecraft_version") as String, "fabric"))
     runtimeOnly(fletchingTable.modrinth("cushions-backport", property("minecraft_version") as String, "fabric"))
     if (findProperty("with_sodium") == "true") {
         runtimeOnly(fletchingTable.modrinth("sodium", property("minecraft_version") as String, "fabric"))

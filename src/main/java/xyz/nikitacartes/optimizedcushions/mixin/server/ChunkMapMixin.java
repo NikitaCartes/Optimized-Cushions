@@ -2,8 +2,9 @@ package xyz.nikitacartes.optimizedcushions.mixin.server;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
+import com.leclowndu93150.cushionbackport.registry.CBEntities;
 import net.minecraft.core.SectionPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -15,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.server.ServerPlayerExt;
 import xyz.nikitacartes.optimizedcushions.server.TrackedEntityExt;
 
@@ -49,7 +49,7 @@ public class ChunkMapMixin {
             final @Coerce Object trackedEntity, final ServerPlayer player, final Operation<Void> original
     ) {
         if (this.optimizedcushions$skipCushionsThisMove
-                && ((TrackedEntityExt) trackedEntity).optimizedcushions$entity() instanceof OptCushion) {
+                && ((TrackedEntityExt) trackedEntity).optimizedcushions$entity() instanceof Cushion) {
             return;
         }
         original.call(trackedEntity, player);
@@ -63,10 +63,9 @@ public class ChunkMapMixin {
             )
     )
     private int optimizedcushions$widenCushionRange(final EntityType<?> type, final Operation<Integer> original) {
-        // No compile dependency on Cushion-Backport: match its entity by registry id.
         // Cushions are static, so widen to 32 chunks and let updatePlayer's
         // min(range, viewDistance) cap it at chunk view distance.
-        if ("cushionbackport:cushion".equals(String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(type)))) {
+        if (type == CBEntities.CUSHION.get()) {
             return 32;
         }
         return original.call(type);
@@ -86,7 +85,7 @@ public class ChunkMapMixin {
         try {
             TrackedEntityExt ext = (TrackedEntityExt) trackedEntity;
             Entity entity = ext.optimizedcushions$entity();
-            this.optimizedcushions$currentEntityQuiescent = entity instanceof OptCushion
+            this.optimizedcushions$currentEntityQuiescent = entity instanceof Cushion
                     && !entity.hurtMarked
                     //? if >=26.2 {
                     && !entity.syncPosition

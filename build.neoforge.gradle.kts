@@ -64,6 +64,9 @@ fletchingTable {
 dependencies {
     // Dev-runtime test mods (not shipped); version IDs live in stonecutter.properties.toml.
     // fletchingTable.modrinth() clashes with the Fabric plugin variant across the multiloader build.
+    // compileOnly (never Jar-in-Jarred): our mixins reference backport classes directly.
+    // At runtime the real mod is required (see neoforge.mods.toml dependency).
+    compileOnly("maven.modrinth:cushions-backport:${property("cushionbackport_version_id")}")
     runtimeOnly("maven.modrinth:cushions-backport:${property("cushionbackport_version_id")}")
     if (findProperty("with_sodium") == "true") {
         runtimeOnly("maven.modrinth:sodium:${property("sodium_version_id")}")

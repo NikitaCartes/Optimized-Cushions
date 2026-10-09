@@ -4,6 +4,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
+import com.leclowndu93150.cushionbackport.registry.CBEntities;
+import com.leclowndu93150.cushionbackport.registry.CBItems;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -30,14 +33,8 @@ public class CushionServerGameTests {
     private static final BlockPos CUSHION = new BlockPos(4, 2, 4);
     private static final BlockPos SUPPORT = new BlockPos(4, 1, 4);
 
-    private static EntityType<Entity> cushionType() {
-        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("cushionbackport", "cushion"));
-        if (type == null) {
-            throw new AssertionError("cushionbackport:cushion is not registered");
-        }
-        @SuppressWarnings("unchecked")
-        EntityType<Entity> cast = (EntityType<Entity>) type;
-        return cast;
+    private static EntityType<Cushion> cushionType() {
+        return CBEntities.CUSHION.get();
     }
 
     // EntityTypes (plural holder) exists only on newer 26.x; the registry lookup works everywhere.
@@ -52,11 +49,7 @@ public class CushionServerGameTests {
     }
 
     private static Item whiteCushionItem() {
-        Item item = BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath("cushionbackport", "white_cushion"));
-        if (item == null) {
-            throw new AssertionError("cushionbackport:white_cushion is not registered");
-        }
-        return item;
+        return CBItems.cushion(DyeColor.WHITE);
     }
 
     // --- routing ---

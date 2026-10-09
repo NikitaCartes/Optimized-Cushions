@@ -1,5 +1,6 @@
 package xyz.nikitacartes.optimizedcushions.mixin;
 
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xyz.nikitacartes.optimizedcushions.CushionExt;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
-@Mixin(targets = "com.leclowndu93150.cushionbackport.entity.Cushion")
+@Mixin(Cushion.class)
 public abstract class CushionMixin implements CushionExt {
     @Shadow
     public abstract DyeColor getColor();

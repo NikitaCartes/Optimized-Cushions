@@ -1,16 +1,15 @@
 package xyz.nikitacartes.optimizedcushions.mixin.server;
 
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 import net.minecraft.world.item.DyeColor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
 import xyz.nikitacartes.optimizedcushions.server.CushionServerExt;
 
-// Targets the Cushion-Backport entity by name (no compile dependency). Also stamps the
-// OptCushion marker so the other mixins can recognise it via instanceof.
-@Mixin(targets = "com.leclowndu93150.cushionbackport.entity.Cushion")
-public abstract class CushionMixin implements CushionServerExt, OptCushion {
+// Targets the Cushion-Backport entity directly (compile dependency, never shipped).
+@Mixin(Cushion.class)
+public abstract class CushionMixin implements CushionServerExt {
     @Shadow
     public abstract DyeColor getColor();
 

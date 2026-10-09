@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import xyz.nikitacartes.optimizedcushions.OptCushion;
+import com.leclowndu93150.cushionbackport.entity.Cushion;
 import xyz.nikitacartes.optimizedcushions.server.CushionServerExt;
 import xyz.nikitacartes.optimizedcushions.server.ServerLevelExt;
 
@@ -14,7 +14,7 @@ import xyz.nikitacartes.optimizedcushions.server.ServerLevelExt;
 public class EntityCallbacksMixin {
     @Inject(method = "onTickingStart(Lnet/minecraft/world/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
     private void optimizedcushions$routeTickingStart(final Entity entity, final CallbackInfo ci) {
-        if (!(entity instanceof OptCushion)) {
+        if (!(entity instanceof Cushion)) {
             return;
         }
         ((CushionServerExt) entity).optimizedcushions$setServerTicking(true);
@@ -28,7 +28,7 @@ public class EntityCallbacksMixin {
 
     @Inject(method = "onTickingEnd(Lnet/minecraft/world/entity/Entity;)V", at = @At("HEAD"))
     private void optimizedcushions$routeTickingEnd(final Entity entity, final CallbackInfo ci) {
-        if (!(entity instanceof OptCushion)) {
+        if (!(entity instanceof Cushion)) {
             return;
         }
         ((CushionServerExt) entity).optimizedcushions$setServerTicking(false);
