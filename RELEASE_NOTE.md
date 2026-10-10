@@ -1,7 +1,8 @@
 ### Release notes
 #### Add
-- Backport to 1.20.1, 1.21.1, 1.21.11, 26.1.2 and 26.2 (Fabric and NeoForge)
-- Sodium and Optimised Block Entities support
+Increased visibility range of the cushions.
+- Now they are visible to full render distance in singleplayer or up to server's `entity-broadcast-range-percentage`.
+- If server do have Optimized Cushions installed, the server will send the cushions to the client at full render distance, regardless of the `entity-broadcast-range-percentage` setting.
 
 ---
 
