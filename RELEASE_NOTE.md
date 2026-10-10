@@ -1,7 +1,8 @@
 ### Release notes
 #### Add
-- 26.3 support
-- Sodium and Optimised Block Entities support
+Increased visibility range of the cushions.
+- Now they are visible to full render distance in singleplayer or up to server's `entity-broadcast-range-percentage`.
+- If server do have Optimized Cushions installed, the server will send the cushions to the client at full render distance, regardless of the `entity-broadcast-range-percentage` setting.
 
 ---
 
