@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 //?}
 import java.util.Map;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SectionBufferBuilderPack;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.chunk.RenderSectionRegion;
 import net.minecraft.client.renderer.chunk.SectionCompiler;
 import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
@@ -32,10 +34,8 @@ public abstract class SectionCompilerMixin {
 
     private static final Logger optimizedcushions$LOGGER = LoggerFactory.getLogger("optimizedcushions");
     /**
-     * Runs after the block loop, right before the started layers are built into meshes,
-     * and appends the quads of every baked cushion in this section to the CUTOUT layer.
-     * NeoForge turns the vanilla 4-arg {@code compile} into a shim and moves the real
-     * body to a 5-arg overload, targeted explicitly.
+     * Appends this section's baked cushions to CUTOUT after the block loop, before
+     * meshes build. NeoForge shims 4-arg {@code compile} into a 5-arg overload: targeted explicitly.
      */
     @Inject(
         //? if neoforge {
@@ -67,9 +67,13 @@ public abstract class SectionCompilerMixin {
 
         BufferBuilder builder = getOrBeginLayer(startedLayers, builders, ChunkSectionLayer.CUTOUT);
 
-        // Snapshot copy: BY_SECTION inner maps are live ConcurrentHashMaps, so a worker
-        // iterating values() directly could bake a torn membership set.
+        // Copy: inner maps are live, direct iteration could bake a torn set.
+        Level clientLevel = Minecraft.getInstance().level;
         for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
+            // Foreign level: bake, flag flip, and eviction each skip/handle it elsewhere.
+            if (cushion.level() != clientLevel) {
+                continue;
+            }
             try {
                 CushionBaker.emit(builder, cushion, sectionPos, region);
             } catch (Exception e) {

@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,16 +24,9 @@ import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 /**
- * Bakes cushions into Sodium chunk meshes.
- *
- * <p>On either loader Sodium's meshing task delegates its tail to the loader's
- * {@code LevelRenderHooks.runChunkMeshAppenders}, which is otherwise a no-op (Fabric)
- * or the addon-renderer dispatcher (NeoForge): injecting at its head runs on the
- * meshing worker with the section's vertex-consumer factory, level slice and section
- * origin already resolved. Only vanilla types appear
- * in this signature (the Sodium slice is coerced to its {@code BlockAndTintGetter}
- * superinterface), so no Sodium dependency is needed and {@code @Pseudo} simply
- * skips this mixin when Sodium is absent.
+ * Bakes cushions into Sodium meshes via {@code LevelRenderHooks.runChunkMeshAppenders} head
+ * (runs on the meshing worker). Vanilla-types-only signature, so no Sodium dependency;
+ * {@code @Pseudo} skips this mixin when Sodium is absent.
  */
 @Pseudo
 @Mixin(targets = {
@@ -41,9 +36,7 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 public class SodiumChunkMeshMixin {
     private static final Logger optimizedcushions$LOGGER = LoggerFactory.getLogger("optimizedcushions");
 
-    // require = 0: if Sodium ever changes this hook's signature, degrade to vanilla
-    // entities instead of crashing. (@Pseudo only covers a missing target class,
-    // not a changed method inside an existing class.)
+    // require = 0: on hook signature change degrade to vanilla entities, never crash.
     @Inject(method = "runChunkMeshAppenders", at = @At("HEAD"), remap = false, require = 0)
     private void optimizedcushions$bakeCushions(
             final List<?> renderers,
@@ -69,9 +62,13 @@ public class SodiumChunkMeshMixin {
         }
 
         final SectionPos sectionPos = SectionPos.of(origin);
-        // Snapshot copy: BY_SECTION inner maps are live ConcurrentHashMaps, so a worker
-        // iterating values() directly could bake a torn membership set.
+        // Copy: inner maps are live, direct iteration could bake a torn set.
+        Level clientLevel = Minecraft.getInstance().level;
         for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
+            // Foreign level: bake, flag flip, and eviction each skip/handle it elsewhere.
+            if (cushion.level() != clientLevel) {
+                continue;
+            }
             try {
                 CushionBaker.emit(builder, cushion, sectionPos, slice);
             } catch (Exception e) {
