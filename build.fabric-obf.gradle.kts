@@ -150,8 +150,8 @@ publishMods {
         client.set(true)
         server.set(true)
     }
-    github {
-        accessToken = githubToken
-        parent(rootProject.tasks.named("publishGithub"))
-    }
+    // github {
+    //     accessToken = githubToken
+    //     parent(rootProject.tasks.named("publishGithub"))
+    // }
 }

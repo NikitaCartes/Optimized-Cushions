@@ -40,11 +40,11 @@ publishMods {
     changelog = rootProject.file("RELEASE_NOTE.md").readText()
     type = STABLE
 
-    github {
-        accessToken = githubToken
-        repository = "NikitaCartes/Optimized-Cushions"
-        commitish = "master"
-        tagName = modVersion
-        allowEmptyFiles = true
-    }
+    // github {
+    //     accessToken = githubToken
+    //     repository = "NikitaCartes/Optimized-Cushions"
+    //     commitish = "master"
+    //     tagName = modVersion
+    //     allowEmptyFiles = true
+    // }
 }
