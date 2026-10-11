@@ -23,8 +23,8 @@ import net.minecraft.world.level.Level;
  * via {@link CushionSectionTasks}, never here.
  */
 public final class CushionTracker {
-    /** Immutable bake state. */
-    public record Snapshot(Entity cushion, double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
+    /** Immutable bake state; carries its Level so worker threads never touch the live entity. */
+    public record Snapshot(Level level, Entity cushion, double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
     }
 
     private static final Map<Integer, Snapshot> SNAPSHOTS = new HashMap<>();
@@ -158,7 +158,12 @@ public final class CushionTracker {
         if (section == null) {
             return;
         }
+        Level level = Minecraft.getInstance().level;
         for (Snapshot snapshot : new ArrayList<>(section.values())) {
+            // Paired with the bake-time skip: never cull a cushion with no mesh copy.
+            if (snapshot.level() != level) {
+                continue;
+            }
             ((CushionExt) snapshot.cushion()).optimizedcushions$setBaked(true);
         }
     }
@@ -175,6 +180,7 @@ public final class CushionTracker {
     private static Snapshot snapshot(final Entity cushion) {
         BlockPos lightPos = BlockPos.containing(cushion.getLightProbePosition(1.0F));
         return new Snapshot(
+            cushion.level(),
             cushion,
             cushion.getX(),
             cushion.getY(),
@@ -205,6 +211,11 @@ public final class CushionTracker {
         int x = SectionPos.x(sectionKey);
         int y = SectionPos.y(sectionKey);
         int z = SectionPos.z(sectionKey);
+        // levelExtractor is main-thread-only; requeue when reached from a worker.
+        if (!mc.isSameThread()) {
+            mc.execute(() -> markDirty(sectionKey));
+            return;
+        }
         try {
             //? if >=26.2 {
             mc.levelExtractor.setSectionDirty(x, y, z);

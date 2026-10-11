@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 //? if >=1.21.11 {
@@ -16,6 +17,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 //?} else
 /*import net.minecraft.world.level.BlockAndTintGetter;*/
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +30,11 @@ import xyz.nikitacartes.optimizedcushions.CushionBaker;
 import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
+/**
+ * Bakes cushions into Sodium meshes via {@code LevelRenderHooks.runChunkMeshAppenders} head
+ * (runs on the meshing worker). Vanilla-types-only signature, so no Sodium dependency;
+ * {@code @Pseudo} skips this mixin when Sodium is absent.
+ */
 @Pseudo
 @Mixin(targets = {
     "net.caffeinemc.mods.sodium.fabric.level.FabricLevelRenderHooks",
@@ -36,6 +43,7 @@ import xyz.nikitacartes.optimizedcushions.CushionTracker;
 public class SodiumChunkMeshMixin {
     private static final Logger optimizedcushions$LOGGER = LoggerFactory.getLogger("optimizedcushionsbackport");
 
+    // require = 0: on hook signature change degrade to vanilla entities, never crash.
     @Inject(method = "runChunkMeshAppenders", at = @At("HEAD"), remap = false, require = 0)
     private void optimizedcushions$bakeCushions(
         final List<?> renderers,
@@ -70,10 +78,14 @@ public class SodiumChunkMeshMixin {
         if (buffer == null) {
             return;
         }
-        SectionPos sectionPos = SectionPos.of(origin);
-        // Snapshot copy: BY_SECTION inner maps are live ConcurrentHashMaps, so a worker
-        // iterating values() directly could bake a torn membership set.
+        final SectionPos sectionPos = SectionPos.of(origin);
+        // Copy: inner maps are live, direct iteration could bake a torn set.
+        Level clientLevel = Minecraft.getInstance().level;
         for (CushionTracker.Snapshot cushion : new ArrayList<>(cushions.values())) {
+            // Foreign level: bake, flag flip, and eviction each skip/handle it elsewhere.
+            if (cushion.level() != clientLevel) {
+                continue;
+            }
             try {
                 CushionBaker.emitFallback(buffer, cushion, sectionPos, slice);
             } catch (Exception e) {
