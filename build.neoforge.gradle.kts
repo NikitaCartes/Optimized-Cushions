@@ -68,6 +68,11 @@ dependencies {
     // At runtime the real mod is required (see neoforge.mods.toml dependency).
     compileOnly("maven.modrinth:cushions-backport:${property("cushionbackport_version_id")}")
     runtimeOnly("maven.modrinth:cushions-backport:${property("cushionbackport_version_id")}")
+    // String-target mixins still need the mod on the compile classpath for the AP.
+    if (stonecutter.eval(stonecutter.current.version, "<1.21.2")) {
+        compileOnly("maven.modrinth:vanillabackport:${property("vanillabackport_version_id")}")
+        runtimeOnly("maven.modrinth:vanillabackport:${property("vanillabackport_version_id")}")
+    }
     if (findProperty("with_sodium") == "true") {
         runtimeOnly("maven.modrinth:sodium:${property("sodium_version_id")}")
     }

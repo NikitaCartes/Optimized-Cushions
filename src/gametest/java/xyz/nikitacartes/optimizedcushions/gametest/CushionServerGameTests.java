@@ -4,9 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
-import com.leclowndu93150.cushionbackport.entity.Cushion;
-import com.leclowndu93150.cushionbackport.registry.CBEntities;
-import com.leclowndu93150.cushionbackport.registry.CBItems;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -26,15 +23,14 @@ import xyz.nikitacartes.optimizedcushions.server.ServerLevelExt;
  *
  * <p>Uses the default 8x8 empty structure; a stone floor is laid at y=1 so cushions have support.
  *
- * <p>The backport entity is looked up from the registry (no compile dependency on
- * Cushion-Backport); colour goes through {@link CushionServerExt}.
+ * <p>Entity/item from registry via {@link BackportCushionIds}; colour via {@link CushionServerExt}.
  */
 public class CushionServerGameTests {
     private static final BlockPos CUSHION = new BlockPos(4, 2, 4);
     private static final BlockPos SUPPORT = new BlockPos(4, 1, 4);
 
-    private static EntityType<Cushion> cushionType() {
-        return CBEntities.CUSHION.get();
+    private static EntityType<Entity> cushionType() {
+        return BackportCushionIds.entityType();
     }
 
     // EntityTypes (plural holder) exists only on newer 26.x; the registry lookup works everywhere.
@@ -49,7 +45,7 @@ public class CushionServerGameTests {
     }
 
     private static Item whiteCushionItem() {
-        return CBItems.cushion(DyeColor.WHITE);
+        return BackportCushionIds.whiteItem();
     }
 
     // --- routing ---

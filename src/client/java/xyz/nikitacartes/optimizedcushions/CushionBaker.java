@@ -6,8 +6,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -53,7 +55,23 @@ public final class CushionBaker {
     }    private record CaptureSet(EntityModelSet source, Map<Direction, List<QuadTemplate>> byDirection) {
     }
 
-    private static final ModelLayerLocation CUSHION_LAYER = new ModelLayerLocation(id("cushionbackport", "cushion"), "main");
+    // Both backports use path "cushion", in different namespaces; bake per namespace.
+    private static final List<String> CUSHION_NAMESPACES = List.of("cushionbackport", "minecraft");
+    private static final Map<String, ModelLayerLocation> CUSHION_LAYERS = buildLayers();
+    private static final Map<String, EnumMap<DyeColor, Identifier>> SPRITE_IDS = buildSpriteIds();
+
+    /** True when this namespace can bake. */
+    static boolean supports(final String namespace) {
+        return CUSHION_LAYERS.containsKey(namespace);
+    }
+
+    private static Map<String, ModelLayerLocation> buildLayers() {
+        Map<String, ModelLayerLocation> byNamespace = new HashMap<>();
+        for (String namespace : CUSHION_NAMESPACES) {
+            byNamespace.put(namespace, new ModelLayerLocation(id(namespace, "cushion"), "main"));
+        }
+        return Map.copyOf(byNamespace);
+    }
 
     // Inlined from com.mojang.blaze3d.platform.Lighting: that class is client-only,
     // so no access widener is needed and a Mojang descriptor change cannot break boot.
@@ -63,7 +81,6 @@ public final class CushionBaker {
     private static final Vector3fc NETHER_DIFFUSE_LIGHT_1 = new Vector3f(-0.2F, -1.0F, 0.7F).normalize();
     private static final float[] DIFFUSE_DEFAULT = diffuseByFace(DIFFUSE_LIGHT_0, DIFFUSE_LIGHT_1);
     private static final float[] DIFFUSE_NETHER = diffuseByFace(NETHER_DIFFUSE_LIGHT_0, NETHER_DIFFUSE_LIGHT_1);
-    private static final EnumMap<DyeColor, Identifier> SPRITE_IDS = buildSpriteIds();
 
     //? if =1.20.1 {
     /*private static final float UV_SCALE = 16.0F;
@@ -71,17 +88,21 @@ public final class CushionBaker {
     private static final float UV_SCALE = 1.0F;
     //?}
 
-    private static volatile CaptureSet captured;
+    private static final ConcurrentHashMap<String, CaptureSet> CAPTURED = new ConcurrentHashMap<>();
 
     private CushionBaker() {
     }
 
-    private static EnumMap<DyeColor, Identifier> buildSpriteIds() {
-        EnumMap<DyeColor, Identifier> ids = new EnumMap<>(DyeColor.class);
-        for (DyeColor color : DyeColor.values()) {
-            ids.put(color, id("cushionbackport", "entity/cushion/" + color.getName() + "_cushion"));
+    private static Map<String, EnumMap<DyeColor, Identifier>> buildSpriteIds() {
+        Map<String, EnumMap<DyeColor, Identifier>> byNamespace = new HashMap<>();
+        for (String namespace : CUSHION_NAMESPACES) {
+            EnumMap<DyeColor, Identifier> ids = new EnumMap<>(DyeColor.class);
+            for (DyeColor color : DyeColor.values()) {
+                ids.put(color, id(namespace, "entity/cushion/" + color.getName() + "_cushion"));
+            }
+            byNamespace.put(namespace, ids);
         }
-        return ids;
+        return Map.copyOf(byNamespace);
     }
 
     private static Identifier id(final String namespace, final String path) {
@@ -92,11 +113,12 @@ public final class CushionBaker {
         //?}
     }
 
-    private static TextureAtlasSprite sprite(final DyeColor color) {
+    private static TextureAtlasSprite sprite(final DyeColor color, final String namespace) {
+        Identifier spriteId = SPRITE_IDS.get(namespace).get(color);
         //? if >=1.21.11 {
-        return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(SPRITE_IDS.get(color));
+        return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(spriteId);
         //?} else
-        /*return Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(SPRITE_IDS.get(color));*/
+        /*return Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(spriteId);*/
     }
 
     /** Called on section meshing worker threads (vanilla and Sodium alike: both regions expose block/sky brightness and cardinal lighting). */
@@ -106,13 +128,13 @@ public final class CushionBaker {
         // Worker threads can race atlas reload / init / disconnect: isolate per cushion
         // so one bad lookup never aborts the whole section.
         try {
-            quads = templates(cushion.dir());
+            quads = templates(cushion.dir(), cushion.namespace());
         } catch (Exception e) {
             return;
         }
         TextureAtlasSprite sprite;
         try {
-            sprite = sprite(cushion.color());
+            sprite = sprite(cushion.color(), cushion.namespace());
         } catch (Exception e) {
             return;
         }
@@ -149,13 +171,13 @@ public final class CushionBaker {
     /*public static void emit(final VertexConsumer buffer, final CushionTracker.Snapshot cushion, final SectionPos sectionPos, final BlockAndTintGetter region) {
         List<QuadTemplate> quads;
         try {
-            quads = templates(cushion.dir());
+            quads = templates(cushion.dir(), cushion.namespace());
         } catch (Exception e) {
             return;
         }
         TextureAtlasSprite sprite;
         try {
-            sprite = sprite(cushion.color());
+            sprite = sprite(cushion.color(), cushion.namespace());
         } catch (Exception e) {
             return;
         }
@@ -182,13 +204,13 @@ public final class CushionBaker {
         List<QuadTemplate> quads;
         // Same worker-thread isolation as emit above: one bad lookup must not abort the section.
         try {
-            quads = templates(cushion.dir());
+            quads = templates(cushion.dir(), cushion.namespace());
         } catch (Exception e) {
             return;
         }
         TextureAtlasSprite sprite;
         try {
-            sprite = sprite(cushion.color());
+            sprite = sprite(cushion.color(), cushion.namespace());
         } catch (Exception e) {
             return;
         }
@@ -232,15 +254,15 @@ public final class CushionBaker {
     }
     *///?}
 
-    private static List<QuadTemplate> templates(final Direction direction) {
+    private static List<QuadTemplate> templates(final Direction direction, final String namespace) {
         EntityModelSet models = Minecraft.getInstance().getEntityModels();
-        CaptureSet set = captured;
+        CaptureSet set = CAPTURED.get(namespace);
         if (set == null || set.source() != models) {
             synchronized (CushionBaker.class) {
-                set = captured;
+                set = CAPTURED.get(namespace);
                 if (set == null || set.source() != models) {
-                    set = new CaptureSet(models, capture(models));
-                    captured = set;
+                    set = new CaptureSet(models, capture(models, CUSHION_LAYERS.get(namespace)));
+                    CAPTURED.put(namespace, set);
                 }
             }
         }
@@ -249,8 +271,8 @@ public final class CushionBaker {
     }
 
     //? if >=1.21.11 {
-    private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models) {
-        ModelPart root = models.bakeLayer(CUSHION_LAYER);
+    private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models, final ModelLayerLocation layer) {
+        ModelPart root = models.bakeLayer(layer);
         Map<Direction, List<QuadTemplate>> byDirection = new EnumMap<>(Direction.class);
 
         for (Direction direction : Direction.Plane.HORIZONTAL) {
@@ -284,8 +306,8 @@ public final class CushionBaker {
         return byDirection;
     }
     //?} else {
-    /*private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models) {
-        ModelPart root = models.bakeLayer(CUSHION_LAYER);
+    /*private static Map<Direction, List<QuadTemplate>> capture(final EntityModelSet models, final ModelLayerLocation layer) {
+        ModelPart root = models.bakeLayer(layer);
         Map<Direction, List<QuadTemplate>> byDirection = new EnumMap<>(Direction.class);
 
         for (Direction direction : Direction.Plane.HORIZONTAL) {

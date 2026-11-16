@@ -11,14 +11,13 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
-import com.leclowndu93150.cushionbackport.entity.Cushion;
 
 /**
  * Row visibility test: cushions in a row along +X starting at the player, inside the default
  * gametest view window (render/view distance 5, so everything below also holds at larger
  * distances up to the widened cushion tracking range).
  *
- * <p>Backport cushions come from Cushion-Backport ({@code cushionbackport:cushion}).
+ * <p>Backport-agnostic via {@link BackportCushionIds}.
  *
  * <p>Mod enabled (baked): every cushion ends up {@link CushionTracker#isBaked}, so the whole row
  * renders like terrain. Vanilla proxy (glowing forces the entity path, same as mod disabled):
@@ -52,7 +51,7 @@ public class CushionRowVisibilityTest implements FabricClientGameTest {
             int x0 = base.getX();
             server.runCommand("fill %d %d %d %d %d %d minecraft:stone".formatted(x0 - 2, floorY, z - 5, x0 + COUNT + 2, floorY, z + 5));
             for (int i = 0; i < COUNT; i++) {
-                server.runCommand("summon cushionbackport:cushion %s %d %s".formatted(x0 + i + 0.5, floorY + 1, z + 0.5));
+                server.runCommand("summon %s %s %d %s".formatted(BackportCushionIds.entityId(), x0 + i + 0.5, floorY + 1, z + 0.5));
             }
             // Side-on camera south of the row middle, looking north and down at the row.
             server.runCommand("tp @a %s %s %s 180 20".formatted(x0 + COUNT / 2 + 0.5, floorY + 3, z + 6.5));
@@ -63,7 +62,7 @@ public class CushionRowVisibilityTest implements FabricClientGameTest {
             context.takeScreenshot("cushions_row_baked");
 
             // Vanilla proxy: glowing forces the entity path (no baking), far end culls at entity distance.
-            server.runCommand("execute as @e[type=cushionbackport:cushion] run data merge entity @s {Glowing:1b}");
+            server.runCommand("execute as @e[type=%s] run data merge entity @s {Glowing:1b}".formatted(BackportCushionIds.entityId()));
             context.waitFor(client -> countBaked(client) == 0, 1200);
             context.takeScreenshot("cushions_row_vanilla");
         }
@@ -85,7 +84,7 @@ public class CushionRowVisibilityTest implements FabricClientGameTest {
             return out;
         }
         for (Entity entity : client.level.entitiesForRendering()) {
-            if (entity instanceof Cushion) {
+            if (BackportCushionIds.isCushion(entity)) {
                 out.add(entity);
             }
         }

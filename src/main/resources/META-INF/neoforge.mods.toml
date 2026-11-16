@@ -10,7 +10,7 @@ displayName = "Optimized Cushions Backport"
 displayURL = "https://github.com/NikitaCartes/Optimized-Cushions"
 authors = "NikitaCartes"
 description = '''
-Optimizes Cushion-Backport cushion entities on both sides, client- and server-side. Vanilla-compatible.
+Optimizes cushion entities from Cushion-Backport and VanillaBackport on both sides, client- and server-side. Vanilla-compatible.
 '''
 
 # Side-gating is in the configs: server mixins in "mixins", client mixins in "client" (skipped on a
@@ -39,10 +39,17 @@ versionRange = "${supported_minecraft_version}"
 ordering = "NONE"
 side = "BOTH"
 
-# The mod this addon optimises. Required, matching the Fabric depends.
+# Optional: mixins apply only when present (see plugin).
 [[dependencies.optimizedcushionsbackport]]
 modId = "cushionbackport"
-type = "required"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.optimizedcushionsbackport]]
+modId = "vanillabackport"
+type = "optional"
 versionRange = "[0,)"
 ordering = "AFTER"
 side = "BOTH"

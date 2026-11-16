@@ -3,7 +3,7 @@
     "id": "optimizedcushionsbackport",
     "version": "${version}",
     "name": "Optimized Cushions Backport",
-    "description": "Optimizes Cushion-Backport cushion entities on both sides, client- and server-side. Vanilla-compatible.",
+    "description": "Optimizes cushion entities from Cushion-Backport and VanillaBackport on both sides, client- and server-side. Vanilla-compatible.",
     "authors": [
         "NikitaCartes"
     ],
@@ -31,7 +31,10 @@
     "depends": {
         "fabricloader": ">=0.16.10",
         "minecraft": "${supported_minecraft_version}",
-        "cushionbackport": "*",
         "fabric-api": "*"
+    },
+    "suggests": {
+        "cushionbackport": "*",
+        "vanillabackport": "*"
     }
 }

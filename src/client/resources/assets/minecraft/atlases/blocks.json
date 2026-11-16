@@ -63,6 +63,70 @@
         {
             "type": "single",
             "resource": "cushionbackport:entity/cushion/black_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/white_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/orange_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/magenta_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/light_blue_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/yellow_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/lime_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/pink_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/gray_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/light_gray_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/cyan_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/purple_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/blue_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/brown_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/green_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/red_cushion"
+        },
+        {
+            "type": "single",
+            "resource": "minecraft:entity/cushion/black_cushion"
         }
     ]
 }

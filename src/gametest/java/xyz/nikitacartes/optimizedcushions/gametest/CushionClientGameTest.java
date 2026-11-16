@@ -9,7 +9,6 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import xyz.nikitacartes.optimizedcushions.CushionTracker;
-import com.leclowndu93150.cushionbackport.entity.Cushion;
 
 /**
  * Client game test for the section-baking half: proves a static cushion is baked into chunk
@@ -25,7 +24,7 @@ public class CushionClientGameTest implements FabricClientGameTest {
 
             BlockPos support = context.computeOnClient(client -> BlockPos.containing(client.player.position()).above(3).north(3));
             singleplayer.getServer().runCommand("setblock %d %d %d minecraft:stone".formatted(support.getX(), support.getY(), support.getZ()));
-            singleplayer.getServer().runCommand("summon cushionbackport:cushion %s %d %s".formatted(support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5));
+            singleplayer.getServer().runCommand("summon %s %s %d %s".formatted(BackportCushionIds.entityId(), support.getX() + 0.5, support.getY() + 1, support.getZ() + 0.5));
 
             // A plain cushion on a solid block must be baked into the section mesh.
             context.waitFor(client -> {
@@ -34,7 +33,7 @@ public class CushionClientGameTest implements FabricClientGameTest {
             });
 
             // Glowing forces the vanilla entity render path, so the cushion must stop being baked.
-            singleplayer.getServer().runCommand("data merge entity @e[type=cushionbackport:cushion,limit=1] {Glowing:1b}");
+            singleplayer.getServer().runCommand("data merge entity @e[type=%s,limit=1] {Glowing:1b}".formatted(BackportCushionIds.entityId()));
             context.waitFor(client -> {
                 Entity cushion = findCushion(client);
                 return cushion != null && !CushionTracker.isBaked(cushion);
@@ -47,7 +46,7 @@ public class CushionClientGameTest implements FabricClientGameTest {
             return null;
         }
         for (Entity entity : client.level.entitiesForRendering()) {
-            if (entity instanceof Cushion) {
+            if (BackportCushionIds.isCushion(entity)) {
                 return entity;
             }
         }

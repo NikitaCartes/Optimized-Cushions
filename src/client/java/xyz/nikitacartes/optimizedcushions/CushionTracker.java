@@ -13,6 +13,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
@@ -24,7 +25,7 @@ import net.minecraft.world.level.Level;
  */
 public final class CushionTracker {
     /** Immutable bake state; carries its Level so worker threads never touch the live entity. */
-    public record Snapshot(Level level, Entity cushion, double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable) {
+    public record Snapshot(Level level, Entity cushion, double x, double y, double z, Direction dir, DyeColor color, BlockPos lightPos, long sectionKey, boolean bakeable, String namespace) {
     }
 
     private static final Map<Integer, Snapshot> SNAPSHOTS = new HashMap<>();
@@ -179,6 +180,8 @@ public final class CushionTracker {
 
     private static Snapshot snapshot(final Entity cushion) {
         BlockPos lightPos = BlockPos.containing(cushion.getLightProbePosition(1.0F));
+        // Namespace from registry: both backports share the duck interface.
+        String namespace = namespace(cushion);
         return new Snapshot(
             cushion.level(),
             cushion,
@@ -189,8 +192,15 @@ public final class CushionTracker {
             ((CushionExt) cushion).optimizedcushions$color(),
             lightPos,
             SectionPos.asLong(cushion.blockPosition()),
-            isBakeable(cushion)
+            isBakeable(cushion) && CushionBaker.supports(namespace),
+            namespace
         );
+    }
+
+    private static String namespace(final Entity cushion) {
+        // var covers ResourceLocation/Identifier across versions.
+        var key = BuiltInRegistries.ENTITY_TYPE.getKey(cushion.getType());
+        return key == null ? "cushionbackport" : key.getNamespace();
     }
 
     private static void removeFromSection(final long sectionKey, final int id) {

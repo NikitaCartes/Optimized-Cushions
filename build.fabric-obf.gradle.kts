@@ -65,6 +65,10 @@ dependencies {
     // be on the compile classpath: Loom only remaps our mixin annotations if it can resolve the target
     // class, and modRuntimeOnly leaves it off the remap classpath.
     modImplementation(fletchingTable.modrinth("cushions-backport", property("minecraft_version") as String, "fabric"))
+    // String-target mixins still need the mod on the compile classpath for the AP.
+    if (stonecutter.eval(stonecutter.current.version, "<1.21.2")) {
+        modImplementation(fletchingTable.modrinth("vanillabackport", property("minecraft_version") as String, "fabric"))
+    }
     if (findProperty("with_sodium") == "true") {
         modRuntimeOnly(fletchingTable.modrinth("sodium", property("minecraft_version") as String, "fabric"))
     }

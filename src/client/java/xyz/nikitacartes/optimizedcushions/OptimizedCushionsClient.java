@@ -17,7 +17,6 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 *///?}
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.leclowndu93150.cushionbackport.entity.Cushion;
 
 //? if fabric {
 public class OptimizedCushionsClient implements ClientModInitializer {
@@ -39,12 +38,12 @@ public class OptimizedCushionsClient implements ClientModInitializer {
         }
 
         ClientEntityEvents.ENTITY_LOAD.register((entity, level) -> {
-            if (entity instanceof Cushion) {
+            if (entity instanceof CushionExt) {
                 CushionTracker.onLoad(entity);
             }
         });
         ClientEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
-            if (entity instanceof Cushion) {
+            if (entity instanceof CushionExt) {
                 CushionTracker.onUnload(entity);
             }
         });
@@ -61,12 +60,12 @@ public class OptimizedCushionsClient {
             LOGGER.info("Sodium detected - baking cushions into Sodium chunk meshes.");
         }
         NeoForge.EVENT_BUS.addListener((EntityJoinLevelEvent event) -> {
-            if (event.getLevel().isClientSide() && event.getEntity() instanceof Cushion) {
+            if (event.getLevel().isClientSide() && event.getEntity() instanceof CushionExt) {
                 CushionTracker.onLoad(event.getEntity());
             }
         });
         NeoForge.EVENT_BUS.addListener((EntityLeaveLevelEvent event) -> {
-            if (event.getLevel().isClientSide() && event.getEntity() instanceof Cushion) {
+            if (event.getLevel().isClientSide() && event.getEntity() instanceof CushionExt) {
                 CushionTracker.onUnload(event.getEntity());
             }
         });
