@@ -8,6 +8,7 @@
         "EntityCallbacksMixin",
         "EntityMixin",
         "ServerEntityAccessor",
+        "ServerEntityMixin",
         "ServerLevelAccessor",
         "ServerLevelMixin",
         "ServerPlayerMixin",
