@@ -1,19 +1,19 @@
 # Optimized Cushions
 
-Vanilla 26.3 added [cushions](https://minecraft.wiki/w/Cushion) as *entities*. A cushion never moves, yet it costs the same as any other entity, both on the client and on the server.  
+Vanilla 26.3 added cushions as *entities*. A cushion never moves, but it still costs the same as any other entity on both client and server.  
 
-This mod treats a cushion as what it is: a static thing. The client bakes it into the terrain so it renders like a block; the server drops the per-tick tracking and ticking overhead. 
-Gameplay is unchanged: sitting, breaking, picking, sounds, particles, drops and saves are all vanilla.
+This mod treats a cushion as what it is: a static thing. The client bakes them into the terrain so they render like blocks; the server drops the per-tick tracking and ticking overhead. 
+Gameplay is unchanged: sitting, breaking, picking, sounds, particles, drops and saves all stay vanilla.
 
-On versions without vanilla cushions the same cushions come from [Cushion-Backport](https://modrinth.com/mod/cushions-backport), which is required there. The optimizations are the same on every version.
+Cushions from [Cushion-Backport](https://modrinth.com/mod/cushions-backport) and [Vanilla Backport](https://modrinth.com/mod/vanillabackport) also supported. The optimizations are the same as on the main version.
 
-To be honest: cushions are already a very light entity, especially server-side, so you will only see a difference if you have a LOT of them.
+To be honest: cushions are already a very light entity, especially server-side, so you’ll only notice a difference if you have a LOT of them.
 
 ## How it works
 
-A cushion is rendered like any other block: baked straight into the chunk mesh and terrain is far cheaper to draw than entities.
+A cushion renders like any other block: baked straight into the chunk mesh, and terrain is much cheaper to draw than entities.
 
-On the server, cushions that have nobody sitting on them skip the entity tracker and tick-list and run through one lightweight loop instead. The moment someone sits down (or you `/ride` one) that cushion snaps back to the full vanilla path, so behavior stays exact.
+On the server, cushions with nobody sitting on them skip the entity tracker and tick-list and run through one lightweight loop instead. As soon as someone sits down (or you `/ride` one), that cushion snaps back to the full vanilla path, so behavior stays exact.
 
 ## Features
 
@@ -31,7 +31,7 @@ On the server, cushions that have nobody sitting on them skip the entity tracker
 
 - **Vanilla-safe** — no protocol or save changes. The client half works on vanilla servers, and the server half serves vanilla clients.
 - **Sodium** — supported: cushions are baked into Sodium chunk meshes just like on vanilla. The **server** optimizations work with or without it.
-- **Optimised Block Entities** — Client side are automatically disabled when OBE is installed. The **server** optimizations still work.
+- **Optimised Block Entities** — client side is automatically disabled when OBE is installed. The **server** optimizations still work.
 - Cushions fall back to the vanilla renderer while glowing, on fire, or invisible, and name tags / F3+B hitboxes always render the vanilla way.
 
 ## Trade-offs

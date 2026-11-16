@@ -1,7 +1,9 @@
 ### Release notes
 #### Fix
-Fixed crash when a Litematica schematic containing cushions was loaded.
-- Schematic cushions are no longer tracked, so schematic rebuilds can no longer corrupt the renderer state.
+- Compatibility issues with Very Many Players mod
+
+#### Add
+- Support for cushions from Vanilla Backport mod
 
 ---
 
