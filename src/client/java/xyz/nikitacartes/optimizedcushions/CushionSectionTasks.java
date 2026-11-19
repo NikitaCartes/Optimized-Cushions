@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * because section remeshing completes asynchronously. Producers run on the client
  * main thread (tracker) and on meshing worker threads (section compiler); the
  * consumer runs wherever a rebuilt mesh is installed ({@code RenderSection.setSectionMesh}
- * on vanilla, {@code LevelRenderer.removeTransientBlocksInSection} under Sodium), so everything
+ * on vanilla, Sodium's {@code RenderSection.setInfo} under Sodium), so everything
  * here is concurrent and tasks must only do map reads plus volatile flag writes.
  */
 public final class CushionSectionTasks {

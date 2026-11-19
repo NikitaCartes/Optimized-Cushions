@@ -168,6 +168,17 @@ public final class CushionTracker {
         }
     }
 
+    /** Runs on install of a mesh with no cushion copy (air-only section, never meshed by Sodium); its cushions fall back to entities. */
+    public static void commitEmptySection(final long sectionKey) {
+        Map<Integer, Snapshot> section = BY_SECTION.get(sectionKey);
+        if (section == null) {
+            return;
+        }
+        for (Snapshot snapshot : section.values()) {
+            ((CushionExt)snapshot.cushion()).optimizedcushions$setBaked(false);
+        }
+    }
+
     /** Runs on mesh install; the identity check blocks stale tasks on reused ids. */
     public static void commitUnbaked(final int id, final long sectionKey, final Cushion cushion) {
         Map<Integer, Snapshot> section = BY_SECTION.get(sectionKey);

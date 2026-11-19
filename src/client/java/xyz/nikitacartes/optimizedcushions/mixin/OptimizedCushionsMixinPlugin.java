@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
  *
  * <p>Sodium is intentionally NOT listed on either loader: cushions are baked into
  * Sodium chunk meshes by {@code SodiumChunkMeshMixin} and committed by
- * {@code LevelRendererMixin}.
+ * {@code SodiumRenderSectionMixin}.
  */
 public class OptimizedCushionsMixinPlugin implements IMixinConfigPlugin {
 
