@@ -71,7 +71,7 @@ public class SodiumChunkMeshMixin {
             //? if >=1.21.11 {
             buffer = typeToConsumer.apply(ChunkSectionLayer.CUTOUT);
             //?} else
-            /*buffer = typeToConsumer.apply(RenderType.cutout());*/
+            /*buffer = typeToConsumer.apply(RenderType.cutoutMipped());*/
         } catch (Exception e) {
             return;
         }

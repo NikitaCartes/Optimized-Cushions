@@ -135,7 +135,7 @@ public abstract class SectionCompilerMixin {
         //? if >=1.21.11 {
         BufferBuilder builder = optimizedcushions$getOrBeginLayer(startedLayers, builders, ChunkSectionLayer.CUTOUT);
         //?} else
-        /*BufferBuilder builder = optimizedcushions$getOrBeginLayer(startedLayers, builders, RenderType.cutout());*/
+        /*BufferBuilder builder = optimizedcushions$getOrBeginLayer(startedLayers, builders, RenderType.cutoutMipped());*/
 
         // Copy: inner maps are live, direct iteration could bake a torn set.
         Level clientLevel = Minecraft.getInstance().level;

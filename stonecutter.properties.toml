@@ -5,7 +5,7 @@
 
 mod_name = "Optimized Cushions Backport"
 mod_id = "optimizedcushionsbackport"
-mod_version = "1.3.0"
+mod_version = "1.3.1"
 maven_group = "xyz.nikitacartes"
 
 # The mod this addon optimises.

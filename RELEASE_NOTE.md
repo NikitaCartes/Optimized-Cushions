@@ -1,9 +1,7 @@
 ### Release notes
 #### Fix
-- Compatibility issues with Very Many Players mod
-
-#### Add
-- Support for cushions from Vanilla Backport mod
+- Cushions flickered with Sodium
+- Baked cushions now sample the block atlas with mipmaps on versions before 1.21.11
 
 ---
 

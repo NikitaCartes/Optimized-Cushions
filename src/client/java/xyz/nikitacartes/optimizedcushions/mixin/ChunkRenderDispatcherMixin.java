@@ -46,8 +46,9 @@ public class ChunkRenderDispatcherMixin {
             return;
         }
 
-        BufferBuilder buffer = pack.builder(RenderType.cutout());
-        if (startedLayers.add(RenderType.cutout())) {
+        // Mipped: plain cutout() samples the atlas without mipmaps and the 64px cushion texture shimmers.
+        BufferBuilder buffer = pack.builder(RenderType.cutoutMipped());
+        if (startedLayers.add(RenderType.cutoutMipped())) {
             buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
         }
 

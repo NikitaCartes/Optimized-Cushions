@@ -42,11 +42,11 @@
         //?}
         //? if >=1.20.2 {
         "SectionCompilerMixin",
-        "RenderSectionMixin",
-        "LevelRendererMixin"
+        "RenderSectionMixin"
         //? if >=1.21.1 {
         ,
-        "SodiumChunkMeshMixin"
+        "SodiumChunkMeshMixin",
+        "SodiumRenderSectionMixin"
         //? if <26.1 {
         /*,
         "LevelSliceOriginAccessor"
@@ -54,8 +54,7 @@
         //?}
         //?} else
         /*"ChunkRenderDispatcherMixin",
-        "ChunkRenderCommitMixin",
-        "LevelRendererMixin"*/
+        "ChunkRenderCommitMixin"*/
     ],
     "injectors": {
         "defaultRequire": 1
