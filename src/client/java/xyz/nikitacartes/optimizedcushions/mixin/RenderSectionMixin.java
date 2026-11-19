@@ -15,6 +15,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /*import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 *///?}
 import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
+//? if <1.21.11 {
+/*import xyz.nikitacartes.optimizedcushions.CushionTracker;
+*///?}
 
 @Mixin(SectionRenderDispatcher.RenderSection.class)
 public class RenderSectionMixin {
@@ -34,10 +37,14 @@ public class RenderSectionMixin {
     }
     *///?} else {
     /*@Inject(method = "setCompiled", at = @At("RETURN"))
-    private void optimizedcushions$commitCushions(final CallbackInfo ci) {
+    private void optimizedcushions$commitCushions(final SectionRenderDispatcher.CompiledSection compiled, final CallbackInfo ci) {
         SectionRenderDispatcher.RenderSection self = (SectionRenderDispatcher.RenderSection) (Object) this;
-        BlockPos origin = self.getOrigin();
-        CushionSectionTasks.executeTasks(SectionPos.asLong(origin));
+        long sectionKey = SectionPos.asLong(self.getOrigin());
+        CushionSectionTasks.executeTasks(sectionKey);
+        // Air-only sections skip compilation (null region), so EMPTY holds no cushion copy.
+        if (compiled == SectionRenderDispatcher.CompiledSection.EMPTY) {
+            CushionTracker.commitEmptySection(sectionKey);
+        }
     }
     *///?}
 }

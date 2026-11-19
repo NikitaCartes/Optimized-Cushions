@@ -46,15 +46,17 @@
         //? if >=1.21.1 {
         ,
         "SodiumChunkMeshMixin",
-        "SodiumRenderSectionMixin"
+        "SodiumRenderSectionMixin",
+        "SodiumBuiltSectionInfoAccessor"
         //? if <26.1 {
         /*,
         "LevelSliceOriginAccessor"
         *///?}
         //?}
-        //?} else
+        //?} else {
         /*"ChunkRenderDispatcherMixin",
-        "ChunkRenderCommitMixin"*/
+        "ChunkRenderCommitMixin"
+        *///?}
     ],
     "injectors": {
         "defaultRequire": 1

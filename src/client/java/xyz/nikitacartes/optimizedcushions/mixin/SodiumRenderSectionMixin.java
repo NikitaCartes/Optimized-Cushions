@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xyz.nikitacartes.optimizedcushions.CushionSectionTasks;
+import xyz.nikitacartes.optimizedcushions.CushionTracker;
 
 /**
  * Commits deferred baked-flag flips when Sodium installs a rebuilt section mesh. Sodium replaces
@@ -27,7 +28,13 @@ public class SodiumRenderSectionMixin {
     @Inject(method = "setInfo", at = @At("RETURN"), remap = false)
     private void optimizedcushions$commitCushions(final @Coerce Object info, final CallbackInfoReturnable<?> cir) {
         if (info != null) {
-            CushionSectionTasks.executeTasks(SectionPos.asLong(this.chunkX, this.chunkY, this.chunkZ));
+            long sectionKey = SectionPos.asLong(this.chunkX, this.chunkY, this.chunkZ);
+            CushionSectionTasks.executeTasks(sectionKey);
+            // Sodium never meshes air-only sections; a mesh without block geometry
+            // (MASK_HAS_BLOCK_GEOMETRY, bit 0) holds no cushion copy.
+            if ((((SodiumBuiltSectionInfoAccessor) info).optimizedcushions$flags() & 1) == 0) {
+                CushionTracker.commitEmptySection(sectionKey);
+            }
         }
     }
 }
